@@ -1,0 +1,6 @@
+{
+  "name": "YA-WE | Pattern Engine",
+  "description": "Motor determinístico de investigação exaustiva da Torá e do Tanakh sobre fluxo consonantal contínuo. Curadoria: Moisés Duarte.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
