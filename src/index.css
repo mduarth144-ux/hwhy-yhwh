@@ -3,11 +3,55 @@
 @layer base {
   html {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1f1912;
+  }
+
+  body {
+    min-height: 100vh;
+    color: #1f1912;
+    background-color: #e6d5b5;
+    background-image:
+      radial-gradient(circle at 12% 14%, rgba(217, 119, 6, 0.2) 0%, rgba(217, 119, 6, 0) 42%),
+      radial-gradient(circle at 86% 18%, rgba(13, 74, 88, 0.16) 0%, rgba(13, 74, 88, 0) 46%),
+      radial-gradient(circle at 74% 84%, rgba(180, 83, 9, 0.15) 0%, rgba(180, 83, 9, 0) 48%),
+      radial-gradient(circle at 18% 82%, rgba(14, 77, 100, 0.12) 0%, rgba(14, 77, 100, 0) 44%),
+      repeating-linear-gradient(
+        0deg,
+        rgba(92, 69, 38, 0.025) 0px,
+        rgba(92, 69, 38, 0.025) 1px,
+        transparent 1px,
+        transparent 5px
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(92, 69, 38, 0.02) 0px,
+        rgba(92, 69, 38, 0.02) 1px,
+        transparent 1px,
+        transparent 7px
+      ),
+      linear-gradient(148deg, #f2e8d2 0%, #e7d5b4 48%, #d9c095 100%);
+    background-attachment: fixed;
   }
 
   code, pre, .font-mono {
     font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
     font-variant-numeric: tabular-nums;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea {
+    background-color: rgba(254, 250, 242, 0.84);
+    border-color: rgba(146, 108, 60, 0.34);
+    color: #1f1912;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: #0e4d64;
+    box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.24);
   }
 }
 
@@ -18,6 +62,95 @@
 
 .tabular-nums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Superficies glassmorficas de papiro de Qumran + lapidacao mineral */
+.qumran-glass {
+  background: linear-gradient(155deg, rgba(253, 248, 237, 0.78) 0%, rgba(246, 236, 215, 0.68) 100%);
+  backdrop-filter: blur(14px) saturate(135%);
+  -webkit-backdrop-filter: blur(14px) saturate(135%);
+}
+
+.qumran-glass-inset {
+  background: linear-gradient(155deg, rgba(243, 231, 206, 0.66) 0%, rgba(235, 219, 187, 0.56) 100%);
+  backdrop-filter: blur(8px) saturate(125%);
+  -webkit-backdrop-filter: blur(8px) saturate(125%);
+  border: 1px solid rgba(146, 108, 60, 0.24);
+}
+
+.qumran-header-glass {
+  background: linear-gradient(90deg, rgba(250, 243, 228, 0.84) 0%, rgba(243, 231, 207, 0.80) 100%);
+  backdrop-filter: blur(16px) saturate(135%);
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  border-bottom: 1px solid rgba(168, 118, 50, 0.32);
+  box-shadow: 0 4px 18px -10px rgba(34, 24, 14, 0.18), inset 0 -1px 0 rgba(14, 77, 100, 0.14);
+}
+
+.qumran-sidebar-glass {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(217, 119, 6, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 85% 88%, rgba(20, 184, 166, 0.12) 0%, transparent 48%),
+    linear-gradient(176deg, rgba(10, 50, 64, 0.94) 0%, rgba(13, 66, 84, 0.91) 52%, rgba(9, 43, 55, 0.95) 100%);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-right: 1px solid rgba(217, 159, 69, 0.32);
+  box-shadow: 6px 0 28px -14px rgba(10, 32, 42, 0.45), inset -1px 0 0 rgba(251, 191, 36, 0.12);
+}
+
+/* Bordas facetadas em ambar, azul petroleo e lapidacao mineral */
+.gem-border {
+  border: 1px solid rgba(173, 122, 52, 0.36);
+  box-shadow:
+    0 10px 26px -14px rgba(36, 24, 12, 0.25),
+    0 0 0 1px rgba(14, 77, 100, 0.12),
+    inset 0 1px 0 rgba(255, 250, 238, 0.86),
+    inset 0 -1px 0 rgba(14, 77, 100, 0.14);
+}
+
+.gem-border-interactive {
+  transition: transform 180ms ease, box-shadow 220ms ease, border-color 220ms ease;
+}
+
+.gem-border-interactive:hover {
+  border-color: rgba(14, 77, 100, 0.44);
+  box-shadow:
+    0 14px 30px -14px rgba(14, 77, 100, 0.26),
+    0 0 0 1px rgba(217, 119, 6, 0.30),
+    inset 0 1px 0 rgba(255, 252, 242, 0.92),
+    inset 0 -1px 0 rgba(217, 119, 6, 0.18);
+}
+
+/* Efeitos de pedra preciosa (azul petroleo + ambar + bronze) em titulos e caracteres de destaque */
+.gem-title {
+  background: linear-gradient(118deg, #0b3948 0%, #0e586e 44%, #9a5410 82%, #6d3909 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gem-hebrew {
+  background: linear-gradient(126deg, #0b3948 0%, #14647c 36%, #b45309 72%, #78350f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 0 rgba(255, 250, 235, 0.72));
+}
+
+.gem-hebrew-amber {
+  background: linear-gradient(122deg, #fef3c7 0%, #fbbf24 45%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.qumran-divider {
+  border-color: rgba(146, 108, 60, 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gem-border-interactive {
+    transition: none;
+  }
 }
 
 @media print {
@@ -34,5 +167,13 @@
   body {
     background: #ffffff !important;
     color: #0f172a !important;
+  }
+  .qumran-glass,
+  .qumran-glass-inset,
+  .gem-border {
+    background: #ffffff !important;
+    backdrop-filter: none !important;
+    box-shadow: none !important;
+    border-color: #cbd5e1 !important;
   }
 }

@@ -135,14 +135,16 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-slate-200 rounded-md p-5 space-y-4">
+      <div className="qumran-glass gem-border rounded-xl p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-md">
+          <div className="flex items-center gap-1 p-1 qumran-glass-inset rounded-lg">
             <button
               type="button"
               onClick={() => setTab('consecutive')}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors cursor-pointer ${
-                tab === 'consecutive' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors cursor-pointer ${
+                tab === 'consecutive'
+                  ? 'bg-[#0e4d64] text-[#fefaf0] shadow-xs'
+                  : 'text-[#4a3d2d] hover:text-[#1f1912]'
               }`}
             >
               Repetições Consecutivas (2x, 3x+)
@@ -150,14 +152,16 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
             <button
               type="button"
               onClick={() => setTab('suffix_array')}
-              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors cursor-pointer ${
-                tab === 'suffix_array' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors cursor-pointer ${
+                tab === 'suffix_array'
+                  ? 'bg-[#0e4d64] text-[#fefaf0] shadow-xs'
+                  : 'text-[#4a3d2d] hover:text-[#1f1912]'
               }`}
             >
               Descoberta por Índice de Sufixos (LCP)
             </button>
           </div>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[#5c4d3c]">
             {tab === 'consecutive'
               ? 'Detecta repetições adjacentes sem lista prévia (ex.: קדוש קדוש קדוש, ארץ ארץ ארץ, יהוה יהוה)'
               : 'Descobre frases recorrentes automaticamente por Suffix Array + Kasai LCP'}
@@ -167,7 +171,7 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
         {tab === 'consecutive' ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <div className="md:col-span-3">
-              <label className="block text-xs text-slate-500 mb-1">Escopo</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Escopo</label>
               <select
                 value={bookSlug !== 'all' ? `book:${bookSlug}` : `div:${division}`}
                 onChange={(e) => {
@@ -180,7 +184,7 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                     setBookSlug('all');
                   }
                 }}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm border rounded"
               >
                 <option value="div:all">Todo o Tanakh (39 livros)</option>
                 <option value="div:Torah">Torá</option>
@@ -194,11 +198,11 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
               </select>
             </div>
             <div className="md:col-span-3">
-              <label className="block text-xs text-slate-500 mb-1">Camada de detecção</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Camada de detecção</label>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value as 'words' | 'stream' | 'both')}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm border rounded"
               >
                 <option value="words">Fronteiras reais de palavras</option>
                 <option value="both">Palavras + tandem repeats no stream</option>
@@ -206,22 +210,22 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-slate-500 mb-1">Repetições mín.</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Repetições mín.</label>
               <select
                 value={minRepeats}
                 onChange={(e) => setMinRepeats(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-white border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums border rounded"
               >
                 <option value={2}>2x ou mais</option>
                 <option value={3}>3x ou mais</option>
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-slate-500 mb-1">Máx. palavras/bloco</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Máx. palavras/bloco</label>
               <select
                 value={maxUnitWords}
                 onChange={(e) => setMaxUnitWords(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums bg-white border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums border rounded"
               >
                 <option value={1}>1 palavra</option>
                 <option value={2}>Até 2 palavras</option>
@@ -233,9 +237,9 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                 type="button"
                 disabled={loading}
                 onClick={() => runRepetitions(1)}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded transition-colors cursor-pointer disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors cursor-pointer disabled:opacity-50"
               >
-                <Repeat className="w-4 h-4" />
+                <Repeat className="w-4 h-4 text-[#fbbf24]" />
                 {loading ? 'Analisando…' : 'Detectar'}
               </button>
             </div>
@@ -243,51 +247,51 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <div className="md:col-span-4">
-              <label className="block text-xs text-slate-500 mb-1">Livro / Bloco para Suffix Array</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Livro / Bloco para Suffix Array</label>
               <select
                 value={saBookSlug}
                 onChange={(e) => setSaBookSlug(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-white border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm border rounded"
               >
                 <option value="all">Torá completa (até 320.000 letras)</option>
                 {books.map((b) => (
                   <option key={b.slug} value={b.slug}>
-                    {b.ptTitle} ({b.letters.toLocaleString()} letras)
+                    {b.ptTitle} ({b.letters.toLocaleString('pt-BR')} letras)
                   </option>
                 ))}
               </select>
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-slate-500 mb-1">Comprimento mín.</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Comprimento mín.</label>
               <input
                 type="number"
                 min={4}
                 max={40}
                 value={minLength}
                 onChange={(e) => setMinLength(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums border rounded"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-slate-500 mb-1">Comprimento máx.</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Comprimento máx.</label>
               <input
                 type="number"
                 min={6}
                 max={80}
                 value={maxLength}
                 onChange={(e) => setMaxLength(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums border rounded"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-slate-500 mb-1">Frequência mín.</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Frequência mín.</label>
               <input
                 type="number"
                 min={2}
                 max={100}
                 value={minFrequency}
                 onChange={(e) => setMinFrequency(Number(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono tabular-nums border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm font-mono tabular-nums border rounded"
               />
             </div>
             <div className="md:col-span-2">
@@ -295,9 +299,9 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                 type="button"
                 disabled={loading}
                 onClick={runSuffixArray}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded transition-colors cursor-pointer disabled:opacity-50"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors cursor-pointer disabled:opacity-50"
               >
-                <Layers className="w-4 h-4" />
+                <Layers className="w-4 h-4 text-[#fbbf24]" />
                 {loading ? 'Indexando…' : 'Descobrir'}
               </button>
             </div>
@@ -307,51 +311,51 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
 
       {tab === 'consecutive' && repData && (
         <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-md p-4 space-y-3">
+          <div className="qumran-glass gem-border rounded-xl p-4 space-y-3">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div className="flex items-baseline gap-3">
-                <span className="text-2xl font-mono font-semibold tabular-nums text-slate-900">
-                  {repData.totalCount.toLocaleString()}
+                <span className="text-2xl font-mono font-bold tabular-nums text-[#0b3948]">
+                  {repData.totalCount.toLocaleString('pt-BR')}
                 </span>
-                <span className="text-sm text-slate-600">repetições consecutivas detectadas</span>
-                <span className="text-xs font-mono text-slate-500">{repData.algorithmVersion}</span>
+                <span className="text-sm text-[#4a3d2d]">repetições consecutivas detectadas</span>
+                <span className="text-xs font-mono text-[#5c4d3c]">{repData.algorithmVersion}</span>
               </div>
-              <span className="text-xs text-slate-500">{repData.computationalLimits}</span>
+              <span className="text-xs text-[#5c4d3c]">{repData.computationalLimits}</span>
             </div>
 
             {repData.topUnits.length > 0 && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 text-xs">
-                <span className="text-slate-500">Unidades mais frequentes:</span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2 border-t qumran-divider text-xs">
+                <span className="text-[#5c4d3c]">Unidades mais frequentes:</span>
                 {repData.topUnits.slice(0, 12).map((u, idx) => (
-                  <span key={idx} className="text-slate-800">
-                    <span className="font-hebrew text-base" dir="rtl" lang="he">{u.unitVocalized}</span>{' '}
-                    <span className="font-mono tabular-nums text-slate-500">({u.occurrences}×, máx {u.maxRepeats}×)</span>
+                  <span key={idx} className="text-[#1f1912]">
+                    <span className="font-hebrew text-base font-bold text-[#0b3948]" dir="rtl" lang="he">{u.unitVocalized}</span>{' '}
+                    <span className="font-mono tabular-nums text-[#5c4d3c]">({u.occurrences}×, máx {u.maxRepeats}×)</span>
                   </span>
                 ))}
               </div>
             )}
           </div>
 
-          <div className="divide-y divide-slate-200 bg-white border border-slate-200 rounded-md">
+          <div className="divide-y qumran-divider qumran-glass gem-border rounded-xl">
             {repData.items.map((item, idx) => (
               <div key={`${item.slug}-${item.startOffset}-${idx}`} className="p-4 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-[#4a3d2d]">
                     <button
                       type="button"
                       onClick={() => onInspectChapter(item.slug, item.chapter)}
-                      className="text-sm font-semibold text-slate-900 hover:text-blue-700 cursor-pointer"
+                      className="text-sm font-bold text-[#0b3948] hover:text-[#9a5410] cursor-pointer"
                     >
                       {item.reference}
                     </button>
                     <span>·</span>
-                    <span className="font-mono tabular-nums font-semibold text-blue-700">
+                    <span className="font-mono tabular-nums font-bold text-[#9a5410]">
                       {item.repeatCount}× adjacente
                     </span>
                     <span>·</span>
                     <span>{item.boundaryType === 'palavra_exata' ? 'Palavra exata' : 'Subcadeia no stream'}</span>
                     <span>·</span>
-                    <span className="font-mono tabular-nums text-slate-500">
+                    <span className="font-mono tabular-nums text-[#6d5b45]">
                       [{item.startOffset}..{item.endOffset})
                     </span>
                   </div>
@@ -367,17 +371,17 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                         parameters_json: JSON.stringify({ unit: item.unit, repeatCount: item.repeatCount }),
                       })
                     }
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-blue-700 border border-blue-200 rounded hover:bg-blue-50 cursor-pointer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#0e4d64] border border-[#0e4d64]/30 rounded hover:bg-[#0e4d64]/10 cursor-pointer"
                   >
                     <BookmarkPlus className="w-3.5 h-3.5" />
                     Salvar
                   </button>
                 </div>
 
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-3 rounded border border-slate-100">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 qumran-glass-inset p-3.5 rounded-lg">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="flex-1 font-hebrew text-xl text-slate-900" dir="rtl" lang="he">{item.verseVocalized}</p>
+                      <p className="flex-1 font-hebrew text-xl text-[#1f1912]" dir="rtl" lang="he">{item.verseVocalized}</p>
                       <AudioPlayButton
                         audioId={`rep-he-${item.slug}-${item.startOffset}-${idx}`}
                         text={item.verseVocalized}
@@ -387,7 +391,7 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                     </div>
                     {item.translationPt && (
                       <div className="flex items-start justify-between gap-3">
-                        <p className="flex-1 text-sm text-slate-600">{item.translationPt}</p>
+                        <p className="flex-1 text-sm text-[#4a3d2d]">{item.translationPt}</p>
                         <AudioPlayButton
                           audioId={`rep-pt-${item.slug}-${item.startOffset}-${idx}`}
                           text={item.translationPt}
@@ -397,16 +401,16 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                       </div>
                     )}
                   </div>
-                  <div className="shrink-0 text-right md:border-l border-slate-200 md:pl-4 space-y-1">
+                  <div className="shrink-0 text-right md:border-l qumran-divider md:pl-4 space-y-1">
                     <div className="flex items-center justify-end gap-2">
                       <AudioPlayButton
                         audioId={`rep-unit-${item.slug}-${item.startOffset}-${idx}`}
                         text={item.unitVocalized}
                         lang="he-IL"
                       />
-                      <span className="text-xs text-slate-500">Unidade repetida</span>
+                      <span className="text-xs text-[#5c4d3c]">Unidade repetida</span>
                     </div>
-                    <div className="font-hebrew text-xl font-bold text-blue-800" dir="rtl" lang="he">
+                    <div className="font-hebrew text-xl font-bold gem-hebrew" dir="rtl" lang="he">
                       {item.unitVocalized}
                     </div>
                   </div>
@@ -419,42 +423,42 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
 
       {tab === 'suffix_array' && saData && (
         <div className="space-y-4">
-          <div className="bg-white border border-slate-200 rounded-md p-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+          <div className="qumran-glass gem-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-2 text-xs text-[#4a3d2d]">
             <div>
-              <strong className="font-mono tabular-nums text-base text-slate-900 mr-1.5">{saData.totalDiscovered}</strong>
+              <strong className="font-mono tabular-nums text-base text-[#0b3948] mr-1.5">{saData.totalDiscovered}</strong>
               padrões recorrentes descobertos em{' '}
-              <strong className="font-mono tabular-nums text-slate-900">{saData.analyzedLetters.toLocaleString()}</strong> letras
-              <span className="ml-2 font-mono text-slate-400">({saData.algorithmVersion})</span>
+              <strong className="font-mono tabular-nums text-[#1f1912]">{saData.analyzedLetters.toLocaleString('pt-BR')}</strong> letras
+              <span className="ml-2 font-mono text-[#6d5b45]">({saData.algorithmVersion})</span>
             </div>
             <div>{saData.computationalLimits}</div>
           </div>
 
-          <div className="overflow-x-auto bg-white border border-slate-200 rounded-md">
+          <div className="overflow-x-auto qumran-glass gem-border rounded-xl">
             <table className="w-full text-left border-collapse text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
-                  <th className="py-2.5 px-4 font-medium">Padrão no Stream</th>
-                  <th className="py-2.5 px-4 font-medium text-right">Freq.</th>
-                  <th className="py-2.5 px-4 font-medium text-right">Letras</th>
-                  <th className="py-2.5 px-4 font-medium">Amostra / Referência</th>
-                  <th className="py-2.5 px-4 font-medium">Versículo de Amostra</th>
+                <tr className="border-b qumran-divider bg-[#e8d6b3]/50 text-xs text-[#4a3d2d]">
+                  <th className="py-2.5 px-4 font-semibold">Padrão no Stream</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">Freq.</th>
+                  <th className="py-2.5 px-4 font-semibold text-right">Letras</th>
+                  <th className="py-2.5 px-4 font-semibold">Amostra / Referência</th>
+                  <th className="py-2.5 px-4 font-semibold">Versículo de Amostra</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200">
+              <tbody className="divide-y qumran-divider">
                 {saData.phrases.map((p, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="py-2.5 px-4 font-hebrew text-lg font-semibold text-blue-800" dir="rtl" lang="he">
+                  <tr key={idx} className="hover:bg-[#fefaf0]/35">
+                    <td className="py-2.5 px-4 font-hebrew text-lg font-bold text-[#0b3948]" dir="rtl" lang="he">
                       {p.phrase}
                     </td>
-                    <td className="py-2.5 px-4 font-mono tabular-nums text-right text-slate-900">{p.frequency}</td>
-                    <td className="py-2.5 px-4 font-mono tabular-nums text-right text-slate-600">{p.length}</td>
-                    <td className="py-2.5 px-4 text-xs text-slate-700">
-                      <div className="font-medium">{p.sampleReference}</div>
-                      <div className="font-hebrew text-sm text-slate-500" dir="rtl" lang="he">{p.sampleWords}</div>
+                    <td className="py-2.5 px-4 font-mono tabular-nums text-right text-[#1f1912]">{p.frequency}</td>
+                    <td className="py-2.5 px-4 font-mono tabular-nums text-right text-[#5c4d3c]">{p.length}</td>
+                    <td className="py-2.5 px-4 text-xs text-[#4a3d2d]">
+                      <div className="font-semibold text-[#1f1912]">{p.sampleReference}</div>
+                      <div className="font-hebrew text-sm text-[#5c4d3c]" dir="rtl" lang="he">{p.sampleWords}</div>
                     </td>
-                    <td className="py-2.5 px-4 text-slate-800 max-w-md space-y-1.5">
+                    <td className="py-2.5 px-4 text-[#1f1912] max-w-md space-y-1.5">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="flex-1 font-hebrew text-base text-slate-800" dir="rtl" lang="he">
+                        <span className="flex-1 font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">
                           {p.sampleVerseVocalized}
                         </span>
                         <AudioPlayButton
@@ -465,7 +469,7 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
                       </div>
                       {p.sampleTranslationPt && (
                         <div className="flex items-start justify-between gap-2">
-                          <span className="flex-1 text-xs text-slate-600">{p.sampleTranslationPt}</span>
+                          <span className="flex-1 text-xs text-[#4a3d2d]">{p.sampleTranslationPt}</span>
                           <AudioPlayButton
                             audioId={`sa-pt-${idx}`}
                             text={p.sampleTranslationPt}

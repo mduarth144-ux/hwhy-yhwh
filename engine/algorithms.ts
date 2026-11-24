@@ -1690,3 +1690,287 @@ export function runValidationSuite(corpus: TanakhCorpus) {
     algorithmVersions: ENGINE_VERSIONS,
   };
 }
+
+// ============================================================================
+// 10. DASHBOARD DE ESTATISTICAS E DESCOBERTAS DETERMINISTICAS
+// ============================================================================
+export function buildDashboardSummary(corpus: TanakhCorpus) {
+  const ketivQereTotal = corpus.books.reduce(
+    (acc, b) => acc + b.masoreticDiffs.reduce((s, d) => s + d.items.length, 0),
+    0,
+  );
+  const totalLetters = corpus.manifest.totals.letters;
+
+  const divisionLabels: Record<string, string> = {
+    Torah: 'Torá (Pentateuco)',
+    Prophets: 'Profetas (Nevi’im)',
+    Writings: 'Escritos (Ketuvim)',
+  };
+
+  const divisionBreakdown = (['Torah', 'Prophets', 'Writings'] as const).map((div) => {
+    const bks = corpus.books.filter((b) => b.division === div);
+    const chapters = bks.reduce((s, b) => s + b.chapters, 0);
+    const verses = bks.reduce((s, b) => s + b.verseCount, 0);
+    const words = bks.reduce((s, b) => s + b.wordCount, 0);
+    const letters = bks.reduce((s, b) => s + b.letterCount, 0);
+    return {
+      division: div,
+      ptLabel: divisionLabels[div],
+      booksCount: bks.length,
+      chapters,
+      verses,
+      words,
+      letters,
+      percentLetters: Number(((letters / totalLetters) * 100).toFixed(1)),
+    };
+  });
+
+  const topBooksByLetters = [...corpus.books]
+    .sort((a, b) => b.letterCount - a.letterCount)
+    .slice(0, 6)
+    .map((b) => ({
+      slug: b.slug,
+      ptTitle: b.ptTitle,
+      heTitle: b.heTitle,
+      division: b.division,
+      chapters: b.chapters,
+      verses: b.verseCount,
+      letters: b.letterCount,
+      percentCorpus: Number(((b.letterCount / totalLetters) * 100).toFixed(1)),
+    }));
+
+  const discoverySpecs = [
+    {
+      id: 'ani_ani_hu',
+      query: 'אניאניהוא',
+      displayHebrew: 'אֲנִי אֲנִי הוּא',
+      transliteration: 'Ani Ani Hu',
+      title: 'Declaração Dupla de Identidade',
+      category: 'identidade',
+      insight: 'Ocorrência singular no stream consonantal em Deuteronômio 32:39 ("Eu, Eu sou Ele").',
+    },
+    {
+      id: 'ani_ani',
+      query: 'אניאני',
+      displayHebrew: 'אֲנִי אֲנִי',
+      transliteration: 'Ani Ani',
+      title: 'Repetição Pronominal ("Eu, Eu")',
+      category: 'identidade',
+      insight: 'Inclui repetições diretas entre palavras (Dt 32:39, Is 48:11) e ressegmentações no fluxo contínuo.',
+    },
+    {
+      id: 'anokhi_anokhi',
+      query: 'אנכיאנכי',
+      displayHebrew: 'אָנֹכִי אָנֹכִי',
+      transliteration: 'Anokhi Anokhi',
+      title: 'Duplicação Enfática ("Eu, Eu" — Anokhi)',
+      category: 'identidade',
+      insight: 'Presente em Isaías 43:11 (com יהוה), Isaías 43:25 e Isaías 51:12 (com הוא).',
+    },
+    {
+      id: 'yhwh_yhwh',
+      query: 'יהוהיהוה',
+      displayHebrew: 'יְהוָה יְהוָה',
+      transliteration: 'YHWH YHWH',
+      title: 'Tetragrama Repetido Adjacente',
+      category: 'tetragrama',
+      insight: 'Proclamação dupla consecutiva em Êxodo 34:6 e ocorrências em fronteiras contínuas.',
+    },
+    {
+      id: 'qadosh_3x',
+      query: 'קדושקדושקדוש',
+      displayHebrew: 'קָדוֹשׁ קָדוֹשׁ קָדוֹשׁ',
+      transliteration: 'Qadosh Qadosh Qadosh',
+      title: 'Triságio Adjacente 3×',
+      category: 'repeticao_tripla',
+      insight: 'Repetição tripla exata de "Santo" registrada em Isaías 6:3.',
+    },
+    {
+      id: 'eretz_3x',
+      query: 'ארץארץארץ',
+      displayHebrew: 'אֶרֶץ אֶרֶץ אֶרֶץ',
+      transliteration: 'Eretz Eretz Eretz',
+      title: 'Clamor Tríplice ("Terra, Terra, Terra")',
+      category: 'repeticao_tripla',
+      insight: 'Triplicação consecutiva literal em Jeremias 22:29.',
+    },
+    {
+      id: 'mah_zot_asita',
+      query: 'מהזאתעשית',
+      displayHebrew: 'מַה־זֹּאת עָשִׂיתָ',
+      transliteration: 'Mah Zot Asita',
+      title: 'Fórmula "Que é isto que fizeste?"',
+      category: 'formula',
+      insight: 'Padrão interrogativo recorrente em Gênesis (3:13, 12:18, 26:10) e Juízes 15:11.',
+    },
+    {
+      id: 'yhwh_total',
+      query: 'יהוה',
+      displayHebrew: 'יְהוָה',
+      transliteration: 'YHWH (Tetragrama)',
+      title: 'Tetragrama no Stream Contínuo',
+      category: 'tetragrama',
+      insight: 'Distinção explícita entre palavras exatas e sequências ressegmentadas ou entre versículos.',
+    },
+  ];
+
+  const keyDiscoveries = discoverySpecs.map((spec) => {
+    const res = searchContinuousStream(corpus, {
+      query: spec.query,
+      boundaryFilter: 'all',
+      page: 1,
+      pageSize: 10,
+    });
+    const first = res.occurrences[0] ?? null;
+    return {
+      id: spec.id,
+      query: spec.query,
+      displayHebrew: spec.displayHebrew,
+      transliteration: spec.transliteration,
+      title: spec.title,
+      category: spec.category,
+      insight: spec.insight,
+      totalCount: res.totalCount,
+      boundaryBreakdown: res.boundaryBreakdown,
+      topBooks: res.bookBreakdown.slice(0, 4),
+      sample: first
+        ? {
+            reference: first.reference,
+            slug: first.slug,
+            chapter: first.chapter,
+            verse: first.verse,
+            verseVocalized: first.verseVocalized,
+            translationPt: first.translationPt,
+            matchedStream: first.matchedStream,
+            startOffset: first.startOffset,
+            endOffset: first.endOffset,
+          }
+        : null,
+    };
+  });
+
+  const reps2x = findConsecutiveRepetitions(corpus, {
+    mode: 'words',
+    minRepeats: 2,
+    maxUnitWords: 2,
+    page: 1,
+    pageSize: 12,
+  });
+  const reps3x = findConsecutiveRepetitions(corpus, {
+    mode: 'words',
+    minRepeats: 3,
+    maxUnitWords: 1,
+    page: 1,
+    pageSize: 12,
+  });
+
+  const identical = findIdenticalVerses(corpus, 18, 8);
+  const cmpPs14_53 = compareChapters(corpus, { slug: 'psalms', chapter: 14 }, { slug: 'psalms', chapter: 53 });
+  const cmpPs18_2Sm22 = compareChapters(corpus, { slug: 'psalms', chapter: 18 }, { slug: 'ii_samuel', chapter: 22 });
+  const cmpIs37_2Rs19 = compareChapters(corpus, { slug: 'isaiah', chapter: 37 }, { slug: 'ii_kings', chapter: 19 });
+
+  const elsTorahGenesis = searchELS(corpus, {
+    query: 'תורה',
+    bookSlug: 'genesis',
+    minSkip: 49,
+    maxSkip: 50,
+    includeNegative: false,
+    limit: 10,
+  });
+
+  return {
+    generatedAtUtc: new Date().toISOString(),
+    corpusTotals: {
+      books: corpus.books.length,
+      traditionalBooks: corpus.manifest.traditional_books_count,
+      chapters: corpus.manifest.totals.chapters,
+      verses: corpus.manifest.totals.verses,
+      words: corpus.manifest.totals.words,
+      letters: totalLetters,
+      uniqueLexiconWords: corpus.lexicon.size,
+      ketivQereTotal,
+    },
+    divisionBreakdown,
+    topBooksByLetters,
+    keyDiscoveries,
+    repetitionsSummary: {
+      total2xPlus: reps2x.totalCount,
+      total3xPlus: reps3x.totalCount,
+      topRepeatedUnits: reps2x.topUnits.slice(0, 8),
+      tripleOccurrences: reps3x.items.slice(0, 6).map((it) => ({
+        unitVocalized: it.unitVocalized,
+        repeatCount: it.repeatCount,
+        reference: it.reference,
+        slug: it.slug,
+        chapter: it.chapter,
+        verseVocalized: it.verseVocalized,
+        translationPt: it.translationPt,
+      })),
+    },
+    parallelsSummary: {
+      identicalClustersCount: identical.totalClusters,
+      topClusters: identical.clusters.slice(0, 4).map((cl) => ({
+        count: cl.count,
+        letterLength: cl.letterLength,
+        verseVocalized: cl.occurrences[0]?.verseVocalized ?? '',
+        translationPt: cl.occurrences[0]?.translationPt ?? '',
+        references: cl.occurrences.slice(0, 5).map((o) => ({
+          reference: o.reference,
+          slug: o.slug,
+          chapter: o.chapter,
+        })),
+      })),
+      featuredComparisons: [
+        {
+          leftSlug: 'psalms',
+          leftChapter: 14,
+          rightSlug: 'psalms',
+          rightChapter: 53,
+          label: 'Salmos 14 ↔ Salmos 53',
+          similarityPercent: cmpPs14_53.averageSimilarityPercent,
+          identicalCount: cmpPs14_53.identicalCount,
+          totalVerses: cmpPs14_53.comparisons.length,
+        },
+        {
+          leftSlug: 'psalms',
+          leftChapter: 18,
+          rightSlug: 'ii_samuel',
+          rightChapter: 22,
+          label: 'Salmos 18 ↔ II Samuel 22',
+          similarityPercent: cmpPs18_2Sm22.averageSimilarityPercent,
+          identicalCount: cmpPs18_2Sm22.identicalCount,
+          totalVerses: cmpPs18_2Sm22.comparisons.length,
+        },
+        {
+          leftSlug: 'isaiah',
+          leftChapter: 37,
+          rightSlug: 'ii_kings',
+          rightChapter: 19,
+          label: 'Isaías 37 ↔ II Reis 19',
+          similarityPercent: cmpIs37_2Rs19.averageSimilarityPercent,
+          identicalCount: cmpIs37_2Rs19.identicalCount,
+          totalVerses: cmpIs37_2Rs19.comparisons.length,
+        },
+      ],
+    },
+    elsSummary: {
+      query: 'תורה',
+      bookSlug: 'genesis',
+      ptBook: 'Gênesis',
+      minSkip: 49,
+      maxSkip: 50,
+      totalHits: elsTorahGenesis.totalHits,
+      expectedRandomHits: elsTorahGenesis.expectedRandomHits,
+      observedOverExpected: elsTorahGenesis.observedOverExpected,
+      sampleHit: elsTorahGenesis.hits[0]
+        ? {
+            skip: elsTorahGenesis.hits[0].skip,
+            referenceStart: elsTorahGenesis.hits[0].referenceStart,
+            referenceEnd: elsTorahGenesis.hits[0].referenceEnd,
+            letterOffsets: elsTorahGenesis.hits[0].letterOffsets,
+          }
+        : null,
+    },
+  };
+}
+

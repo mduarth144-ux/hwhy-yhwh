@@ -52,7 +52,7 @@ export const HighlightedHebrewText: React.FC<HighlightedHebrewTextProps> = ({
   consonantal,
   expectedStreamLength,
   highlights,
-  className = 'font-hebrew text-xl leading-relaxed text-slate-900',
+  className = 'font-hebrew text-xl leading-relaxed text-[#1f1912]',
 }) => {
   const highlightMap = new Map<number, HighlightedOffset>();
   for (const hl of highlights) {
@@ -83,7 +83,7 @@ export const HighlightedHebrewText: React.FC<HighlightedHebrewTextProps> = ({
           <mark
             key={idx}
             title={`Letra ${hl.queryIndex + 1} da sequência buscada (${hl.letter}) · posição consonantal ${tok.consIndex + 1} no versículo`}
-            className="bg-amber-300 text-slate-950 font-bold rounded-[2px] shadow-[0_0_0_1.5px_#1d4ed8] px-[1px]"
+            className="bg-[#fbbf24] text-[#1f1912] font-bold rounded-[2px] shadow-[0_0_0_1.5px_#0e4d64] px-[1px]"
           >
             {tok.text}
           </mark>

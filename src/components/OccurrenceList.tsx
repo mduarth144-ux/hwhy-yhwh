@@ -43,28 +43,28 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
   }
 
   return (
-    <div className="divide-y divide-slate-200 border border-slate-200 bg-white rounded-md">
+    <div className="divide-y qumran-divider qumran-glass gem-border rounded-xl">
       {items.map((occ) => {
         const isExpanded = Boolean(expandedContext[occ.id]);
         return (
           <article key={occ.id} className="p-4 space-y-2.5">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <div className="flex flex-wrap items-baseline gap-2 text-xs text-slate-600">
+              <div className="flex flex-wrap items-baseline gap-2 text-xs text-[#4a3d2d]">
                 <button
                   type="button"
                   onClick={() => onInspectChapter?.(occ.slug, occ.chapter)}
-                  className="text-sm font-semibold text-slate-900 hover:text-blue-700 transition-colors cursor-pointer"
+                  className="text-sm font-bold text-[#0b3948] hover:text-[#9a5410] transition-colors cursor-pointer"
                 >
                   {occ.reference}
                 </button>
                 <span aria-hidden="true">·</span>
-                <span className={occ.boundaryType === 'resegmented' || occ.boundaryType === 'cross_verse' ? 'text-amber-700 font-medium' : 'text-slate-700'}>
+                <span className={occ.boundaryType === 'resegmented' || occ.boundaryType === 'cross_verse' ? 'text-[#9a5410] font-semibold' : 'text-[#4a3d2d]'}>
                   {BOUNDARY_LABELS[occ.boundaryType]}
                 </span>
                 <span aria-hidden="true">·</span>
                 <span>{TIER_LABELS[occ.evidenceTier] ?? occ.evidenceTier}</span>
                 <span aria-hidden="true">·</span>
-                <span className="font-mono tabular-nums text-slate-500" dir="ltr">
+                <span className="font-mono tabular-nums text-[#6d5b45]" dir="ltr">
                   [{occ.startOffset}..{occ.endOffset})
                 </span>
                 <span aria-hidden="true">·</span>
@@ -75,7 +75,7 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
                 <button
                   type="button"
                   onClick={() => setExpandedContext((prev) => ({ ...prev, [occ.id]: !isExpanded }))}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded transition-colors whitespace-nowrap cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#4a3d2d] hover:text-[#1f1912] qumran-glass-inset rounded transition-colors whitespace-nowrap cursor-pointer"
                 >
                   {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   Contexto e camadas
@@ -91,7 +91,7 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
                       parameters_json: JSON.stringify({ parameters: occ.parametersSummary, offsets: [occ.startOffset, occ.endOffset] }),
                     })
                   }
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-blue-700 hover:bg-blue-50 border border-blue-200 rounded transition-colors whitespace-nowrap cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-[#0e4d64] hover:bg-[#0e4d64]/10 border border-[#0e4d64]/30 rounded transition-colors whitespace-nowrap cursor-pointer"
                 >
                   <BookmarkPlus className="w-3.5 h-3.5" />
                   Salvar no caderno
@@ -99,10 +99,10 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 bg-slate-50 p-3 rounded border border-slate-100">
+            <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 qumran-glass-inset p-3.5 rounded-lg">
               <div className="flex-1 space-y-2">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="flex-1 font-hebrew text-xl leading-relaxed text-slate-900" dir="rtl" lang="he">
+                  <p className="flex-1 font-hebrew text-xl leading-relaxed text-[#1f1912]" dir="rtl" lang="he">
                     {occ.verseVocalized}
                   </p>
                   <div className="pt-1 shrink-0">
@@ -116,9 +116,9 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
                 </div>
                 {occ.translationPt && (
                   <div className="flex items-start justify-between gap-3">
-                    <p className="flex-1 text-sm text-slate-700 leading-relaxed">
+                    <p className="flex-1 text-sm text-[#4a3d2d] leading-relaxed">
                       {occ.translationPt}
-                      <span className="text-xs text-slate-400 ml-2">
+                      <span className="text-xs text-[#6d5b45] ml-2">
                         ({occ.translationPtSource ?? 'Almeida Corrigida Fiel (ACF)'})
                       </span>
                     </p>
@@ -134,20 +134,20 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
                 )}
               </div>
 
-              <div className="md:w-64 shrink-0 text-right border-t md:border-t-0 md:border-l border-slate-200 pt-2 md:pt-0 md:pl-4 space-y-1">
+              <div className="md:w-64 shrink-0 text-right border-t md:border-t-0 md:border-l qumran-divider pt-2 md:pt-0 md:pl-4 space-y-1">
                 <div className="flex items-center justify-end gap-2">
                   <AudioPlayButton
                     audioId={`occ-match-${occ.id}`}
                     text={occ.matchedWordsOriginal || occ.matchedStream}
                     lang="he-IL"
                   />
-                  <span className="text-xs text-slate-500">Trecho no stream contínuo</span>
+                  <span className="text-xs text-[#5c4d3c]">Trecho no stream contínuo</span>
                 </div>
-                <div className="font-hebrew text-lg font-bold text-blue-800 tracking-wide" dir="rtl" lang="he">
+                <div className="font-hebrew text-lg font-bold gem-hebrew tracking-wide" dir="rtl" lang="he">
                   {occ.matchedStream}
                 </div>
                 {occ.matchedWordsOriginal && (
-                  <div className="font-hebrew text-sm text-slate-600" dir="rtl" lang="he">
+                  <div className="font-hebrew text-sm text-[#4a3d2d]" dir="rtl" lang="he">
                     {occ.matchedWordsOriginal}
                   </div>
                 )}
@@ -155,31 +155,31 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
             </div>
 
             {isExpanded && (
-              <div className="pt-2 space-y-2 text-xs text-slate-600">
+              <div className="pt-2 space-y-2 text-xs text-[#4a3d2d]">
                 {occ.contextBefore && (
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-slate-500">Versículo anterior</span>
-                    <span className="font-hebrew text-base text-slate-700" dir="rtl" lang="he">{occ.contextBefore}</span>
+                    <span className="text-[#5c4d3c]">Versículo anterior</span>
+                    <span className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">{occ.contextBefore}</span>
                   </div>
                 )}
                 {occ.contextAfter && (
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-slate-500">Versículo posterior</span>
-                    <span className="font-hebrew text-base text-slate-700" dir="rtl" lang="he">{occ.contextAfter}</span>
+                    <span className="text-[#5c4d3c]">Versículo posterior</span>
+                    <span className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">{occ.contextAfter}</span>
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                   <div>
-                    <span className="text-slate-500 block">Camada consonantal (apresentação)</span>
-                    <span className="font-hebrew text-base text-slate-800" dir="rtl" lang="he">{occ.verseConsonantal}</span>
+                    <span className="text-[#5c4d3c] block">Camada consonantal (apresentação)</span>
+                    <span className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">{occ.verseConsonantal}</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 block">Stream do versículo (fonte de busca)</span>
-                    <span className="font-hebrew text-sm text-slate-800 break-all" dir="rtl" lang="he">{occ.verseStream}</span>
+                    <span className="text-[#5c4d3c] block">Stream do versículo (fonte de busca)</span>
+                    <span className="font-hebrew text-sm text-[#1f1912] break-all" dir="rtl" lang="he">{occ.verseStream}</span>
                   </div>
                 </div>
                 {occ.ketivQereInVerse.length > 0 && (
-                  <div className="text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-1.5">
+                  <div className="text-[#78350f] bg-[#f59e0b]/15 border border-[#b45309]/35 rounded px-3 py-1.5">
                     Diferença massorética Ketiv/Qere no versículo:{' '}
                     {occ.ketivQereInVerse.map((kq, i) => (
                       <span key={i} className="font-hebrew text-sm mr-3" dir="rtl" lang="he">
@@ -188,7 +188,7 @@ export const OccurrenceList: React.FC<OccurrenceListProps> = ({
                     ))}
                   </div>
                 )}
-                <div className="font-mono text-[11px] text-slate-400">
+                <div className="font-mono text-[11px] text-[#6d5b45]">
                   Edição: {occ.edition} · Parâmetros: {occ.parametersSummary}
                 </div>
               </div>

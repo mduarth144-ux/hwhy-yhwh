@@ -6,6 +6,7 @@ import {
   ENGINE_VERSIONS,
   analyzeIdentityDeclarations,
   analyzeInversionsAndPermutations,
+  buildDashboardSummary,
   compareChapters,
   discoverRecurringPhrasesSuffixArray,
   experimentalPhoneticSearch,
@@ -47,6 +48,7 @@ async function startServer() {
 
   const corpus = new TanakhCorpus(DATA_DIR);
   const store = new MetadataStore(DATA_DIR);
+  let cachedDashboard: ReturnType<typeof buildDashboardSummary> | null = null;
 
   // Health & Manifest
   app.get('/api/health', (_req, res) => {
@@ -62,6 +64,13 @@ async function startServer() {
       manifest: corpus.manifest,
       algorithmVersions: ENGINE_VERSIONS,
     });
+  });
+
+  app.get('/api/dashboard', (_req, res) => {
+    if (!cachedDashboard) {
+      cachedDashboard = buildDashboardSummary(corpus);
+    }
+    res.json(cachedDashboard);
   });
 
   // Explorer: Book chapter with all textual layers

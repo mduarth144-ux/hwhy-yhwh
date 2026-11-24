@@ -44,10 +44,10 @@ export const AudioPlayButton: React.FC<AudioPlayButtonProps> = ({
       title={unsupported ? 'Síntese de voz indisponível neste navegador' : defaultTitle}
       aria-label={defaultTitle}
       aria-pressed={isPlaying}
-      className={`inline-flex items-center justify-center gap-1.5 px-2 py-1 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer no-print ${
+      className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer no-print ${
         isPlaying
-          ? 'bg-blue-700 text-white border-blue-700 hover:bg-blue-800'
-          : 'bg-white text-slate-600 border-slate-200 hover:border-blue-600 hover:text-blue-700'
+          ? 'bg-[#0e4d64] text-[#fefaf0] border-[#fbbf24]/60 hover:bg-[#0b3948]'
+          : 'qumran-glass-inset text-[#4a3d2d] hover:border-[#0e4d64] hover:text-[#0b3948]'
       }`}
     >
       {isPlaying ? <Square className="w-3 h-3 fill-current" /> : <Volume2 className="w-3.5 h-3.5" />}

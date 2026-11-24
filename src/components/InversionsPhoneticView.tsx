@@ -164,10 +164,10 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-md p-5 space-y-4">
+      <form onSubmit={handleSubmit} className="qumran-glass gem-border rounded-xl p-5 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
           <div className="md:col-span-5">
-            <label className="block text-xs text-slate-500 mb-1">
+            <label className="block text-xs text-[#5c4d3c] mb-1">
               {mode === 'inversions'
                 ? 'Palavra / raiz hebraica para inversão e permutação'
                 : 'Termo de referência para comparação fonética experimental'}
@@ -178,17 +178,18 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
               lang="he"
               value={term}
               onChange={(e) => setTerm(e.target.value)}
-              className="w-full px-3.5 py-2 text-lg font-hebrew bg-white border border-slate-300 rounded focus:outline-none focus:border-blue-600"
+              className="w-full px-3.5 py-2 text-lg font-hebrew border rounded"
             />
           </div>
 
           {mode === 'inversions' ? (
-            <div className="md:col-span-5 flex flex-wrap items-center gap-4 text-xs text-slate-700 pb-2">
+            <div className="md:col-span-5 flex flex-wrap items-center gap-4 text-xs text-[#4a3d2d] pb-2">
               <label className="inline-flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={normalizeFinals}
                   onChange={(e) => setNormalizeFinals(e.target.checked)}
+                  className="accent-[#0e4d64]"
                 />
                 Normalizar finais
               </label>
@@ -197,6 +198,7 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                   type="checkbox"
                   checked={includePermutations}
                   onChange={(e) => setIncludePermutations(e.target.checked)}
+                  className="accent-[#0e4d64]"
                 />
                 Gerar permutações (≤7 letras)
               </label>
@@ -205,13 +207,14 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                   type="checkbox"
                   checked={includeStreamSubstrings}
                   onChange={(e) => setIncludeStreamSubstrings(e.target.checked)}
+                  className="accent-[#0e4d64]"
                 />
                 Incluir subcadeias no stream
               </label>
             </div>
           ) : (
             <div className="md:col-span-5">
-              <label className="block text-xs text-slate-500 mb-1">
+              <label className="block text-xs text-[#5c4d3c] mb-1">
                 Custo máximo de transformação fonética ({maxCost.toFixed(2)})
               </label>
               <input
@@ -221,7 +224,7 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                 step={0.05}
                 value={maxCost}
                 onChange={(e) => setMaxCost(Number(e.target.value))}
-                className="w-full"
+                className="w-full accent-[#0e4d64]"
               />
             </div>
           )}
@@ -230,17 +233,17 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors cursor-pointer disabled:opacity-50"
             >
-              {mode === 'inversions' ? <Shuffle className="w-4 h-4" /> : <AudioWaveform className="w-4 h-4" />}
+              {mode === 'inversions' ? <Shuffle className="w-4 h-4 text-[#fbbf24]" /> : <AudioWaveform className="w-4 h-4 text-[#fbbf24]" />}
               {loading ? 'Analisando…' : 'Executar'}
             </button>
           </div>
         </div>
 
         {mode === 'phonetic' && (
-          <div className="pt-2 border-t border-slate-100 space-y-2">
-            <div className="text-xs text-slate-500">Regras fonéticas experimentais independentes:</div>
+          <div className="pt-2 border-t qumran-divider space-y-2">
+            <div className="text-xs text-[#5c4d3c]">Regras fonéticas experimentais independentes:</div>
             <div className="flex flex-wrap gap-2">
               {DEFAULT_RULES.map((r) => {
                 const active = activeRules.includes(r.id);
@@ -251,8 +254,8 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                     onClick={() => toggleRule(r.id)}
                     className={`px-2.5 py-1.5 text-xs rounded border transition-colors cursor-pointer ${
                       active
-                        ? 'bg-blue-50 border-blue-600 text-blue-900 font-medium'
-                        : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                        ? 'bg-[#0e4d64] border-[#fbbf24]/55 text-[#fefaf0] font-semibold'
+                        : 'qumran-glass-inset text-[#4a3d2d] hover:border-[#0e4d64]/50'
                     }`}
                   >
                     {r.label} · custo {r.cost}
@@ -284,11 +287,11 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
       {mode === 'inversions' && invData && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white border border-slate-200 rounded-md p-4 space-y-2">
-              <div className="text-xs text-slate-500">Forma original (ordem lógica)</div>
+            <div className="qumran-glass gem-border rounded-xl p-4 space-y-2">
+              <div className="text-xs text-[#5c4d3c]">Forma original (ordem lógica)</div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-hebrew text-3xl font-bold text-slate-900" dir="rtl" lang="he">
+                  <span className="font-hebrew text-3xl font-bold text-[#1f1912]" dir="rtl" lang="he">
                     {invData.original.form}
                   </span>
                   <AudioPlayButton
@@ -297,18 +300,18 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                     lang="he-IL"
                   />
                 </div>
-                <span className="font-mono tabular-nums text-sm text-slate-700">
-                  {invData.original.lexiconCount.toLocaleString()} ocorrências ({invData.original.booksCount} livros)
+                <span className="font-mono tabular-nums text-sm text-[#4a3d2d]">
+                  {invData.original.lexiconCount.toLocaleString('pt-BR')} ocorrências ({invData.original.booksCount} livros)
                 </span>
               </div>
-              <div className="text-xs text-slate-600">{CLASS_LABEL[invData.original.classification]}</div>
+              <div className="text-xs text-[#4a3d2d]">{CLASS_LABEL[invData.original.classification]}</div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-md p-4 space-y-2">
-              <div className="text-xs text-slate-500">Inversão lógica</div>
+            <div className="qumran-glass gem-border rounded-xl p-4 space-y-2">
+              <div className="text-xs text-[#5c4d3c]">Inversão lógica</div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-hebrew text-3xl font-bold text-blue-700" dir="rtl" lang="he">
+                  <span className="font-hebrew text-3xl font-bold gem-hebrew" dir="rtl" lang="he">
                     {invData.inverted.form}
                   </span>
                   <AudioPlayButton
@@ -317,42 +320,42 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                     lang="he-IL"
                   />
                 </div>
-                <span className="font-mono tabular-nums text-sm text-slate-700">
-                  {invData.inverted.lexiconCount.toLocaleString()} no léxico · {invData.invertedTotalStreamHits} no filtro
+                <span className="font-mono tabular-nums text-sm text-[#4a3d2d]">
+                  {invData.inverted.lexiconCount.toLocaleString('pt-BR')} no léxico · {invData.invertedTotalStreamHits} no filtro
                 </span>
               </div>
-              <div className="text-xs text-slate-600">{CLASS_LABEL[invData.inverted.classification]}</div>
+              <div className="text-xs text-[#4a3d2d]">{CLASS_LABEL[invData.inverted.classification]}</div>
             </div>
           </div>
 
           {invData.permutations && (
-            <div className="bg-white border border-slate-200 rounded-md p-5 space-y-4">
+            <div className="qumran-glass gem-border rounded-xl p-5 space-y-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900">
+                  <h3 className="text-sm font-bold text-[#1f1912]">
                     Permutações validadas no corpus ({invData.permutations.attested.length} atestadas de{' '}
                     {invData.permutations.totalTheoretical} combinações únicas)
                   </h3>
-                  <p className="text-xs text-slate-500">{invData.computationalLimits}</p>
+                  <p className="text-xs text-[#5c4d3c]">{invData.computationalLimits}</p>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-xs text-slate-600">
-                      <th className="py-2 px-3 font-medium">Permutação</th>
-                      <th className="py-2 px-3 font-medium">Classificação no Tanakh</th>
-                      <th className="py-2 px-3 font-medium text-right">Frequência</th>
-                      <th className="py-2 px-3 font-medium text-right">Livros</th>
+                    <tr className="border-b qumran-divider bg-[#e8d6b3]/50 text-xs text-[#4a3d2d]">
+                      <th className="py-2 px-3 font-semibold">Permutação</th>
+                      <th className="py-2 px-3 font-semibold">Classificação no Tanakh</th>
+                      <th className="py-2 px-3 font-semibold text-right">Frequência</th>
+                      <th className="py-2 px-3 font-semibold text-right">Livros</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y qumran-divider">
                     {invData.permutations.attested.map((p) => (
-                      <tr key={p.form} className="hover:bg-slate-50">
+                      <tr key={p.form} className="hover:bg-[#fefaf0]/35">
                         <td className="py-2 px-3">
                           <div className="inline-flex items-center gap-2">
-                            <span className="font-hebrew text-xl font-semibold text-slate-900" dir="rtl" lang="he">
+                            <span className="font-hebrew text-xl font-bold text-[#0b3948]" dir="rtl" lang="he">
                               {p.form}
                             </span>
                             <AudioPlayButton
@@ -362,11 +365,11 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                             />
                           </div>
                         </td>
-                        <td className="py-2 px-3 text-xs text-slate-700">{CLASS_LABEL[p.classification]}</td>
-                        <td className="py-2 px-3 font-mono tabular-nums text-right text-slate-900">
-                          {p.lexiconCount.toLocaleString()}
+                        <td className="py-2 px-3 text-xs text-[#4a3d2d]">{CLASS_LABEL[p.classification]}</td>
+                        <td className="py-2 px-3 font-mono tabular-nums text-right text-[#1f1912]">
+                          {p.lexiconCount.toLocaleString('pt-BR')}
                         </td>
-                        <td className="py-2 px-3 font-mono tabular-nums text-right text-slate-600">{p.booksCount}</td>
+                        <td className="py-2 px-3 font-mono tabular-nums text-right text-[#5c4d3c]">{p.booksCount}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -374,9 +377,9 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
               </div>
 
               {invData.permutations.sampleUnattested.length > 0 && (
-                <div className="text-xs text-slate-500 pt-2 border-t border-slate-100">
+                <div className="text-xs text-[#5c4d3c] pt-2 border-t qumran-divider">
                   Não atestadas no corpus ({invData.permutations.unattestedCount}):{' '}
-                  <span className="font-hebrew text-sm text-slate-600" dir="rtl" lang="he">
+                  <span className="font-hebrew text-sm text-[#4a3d2d]" dir="rtl" lang="he">
                     {invData.permutations.sampleUnattested.join(' · ')}
                   </span>
                 </div>
@@ -386,7 +389,7 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
 
           {invData.invertedSampleOccurrences.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-800">
+              <h3 className="text-sm font-bold text-[#1f1912]">
                 Amostra de ocorrências para a forma invertida ({invData.inverted.form})
               </h3>
               <OccurrenceList
@@ -401,19 +404,19 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
 
       {mode === 'phonetic' && phonData && (
         <div className="space-y-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
+          <div className="bg-[#f59e0b]/15 border border-[#b45309]/35 rounded-xl p-4 text-xs text-[#78350f] flex flex-wrap items-center justify-between gap-2">
             <span>{phonData.disclaimer}</span>
             <span className="font-mono tabular-nums">
               {phonData.totalLexiconCandidates} candidatos no léxico ({phonData.algorithmVersion})
             </span>
           </div>
 
-          <div className="divide-y divide-slate-200 bg-white border border-slate-200 rounded-md">
+          <div className="divide-y qumran-divider qumran-glass gem-border rounded-xl">
             {phonData.matches.map((m) => (
               <div key={m.word} className="p-4 space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-hebrew text-2xl font-bold text-slate-900" dir="rtl" lang="he">
+                    <span className="font-hebrew text-2xl font-bold gem-hebrew" dir="rtl" lang="he">
                       {m.word}
                     </span>
                     <AudioPlayButton
@@ -421,10 +424,10 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                       text={m.word}
                       lang="he-IL"
                     />
-                    <span className="text-xs text-amber-800 font-medium">
+                    <span className="text-xs text-[#9a5410] font-semibold">
                       {m.cost === 0 ? 'Forma exata (custo 0)' : 'Hipótese fonética experimental'}
                     </span>
-                    <span className="text-xs font-mono tabular-nums text-slate-600">
+                    <span className="text-xs font-mono tabular-nums text-[#4a3d2d]">
                       Custo: {m.cost} · Distância Levenshtein: {m.editDistance} · {m.lexiconCount}× em {m.booksCount} livros · {m.language}
                     </span>
                   </div>
@@ -439,30 +442,30 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                         parameters_json: JSON.stringify({ cost: m.cost, transformations: m.transformations }),
                       })
                     }
-                    className="px-2.5 py-1 text-xs text-blue-700 border border-blue-200 rounded hover:bg-blue-50 cursor-pointer"
+                    className="px-2.5 py-1 text-xs font-medium text-[#0e4d64] border border-[#0e4d64]/30 rounded hover:bg-[#0e4d64]/10 cursor-pointer"
                   >
                     Registrar hipótese
                   </button>
                 </div>
 
                 {m.transformations.length > 0 && (
-                  <div className="text-xs font-mono text-slate-600">
+                  <div className="text-xs font-mono text-[#4a3d2d]">
                     Transformações aplicadas: {m.transformations.join(' | ')}
                   </div>
                 )}
 
                 {m.sampleOccurrences[0] && (
-                  <div className="bg-slate-50 p-3 rounded border border-slate-100 text-xs space-y-2">
+                  <div className="qumran-glass-inset p-3 rounded-lg text-xs space-y-2">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
                       <button
                         type="button"
                         onClick={() => onInspectChapter(m.sampleOccurrences[0].slug, m.sampleOccurrences[0].chapter)}
-                        className="text-blue-700 font-medium hover:underline text-left shrink-0 cursor-pointer"
+                        className="text-[#0e4d64] font-semibold hover:text-[#9a5410] hover:underline text-left shrink-0 cursor-pointer"
                       >
                         {m.sampleOccurrences[0].reference}
                       </button>
                       <div className="flex items-start justify-end gap-2">
-                        <span className="font-hebrew text-base text-slate-800" dir="rtl" lang="he">
+                        <span className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">
                           {m.sampleOccurrences[0].verseVocalized}
                         </span>
                         <AudioPlayButton
@@ -474,8 +477,8 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
                       </div>
                     </div>
                     {m.sampleOccurrences[0].translationPt && (
-                      <div className="flex items-start justify-between gap-2 pt-1 border-t border-slate-200/70">
-                        <span className="flex-1 text-slate-600">{m.sampleOccurrences[0].translationPt}</span>
+                      <div className="flex items-start justify-between gap-2 pt-1 border-t qumran-divider">
+                        <span className="flex-1 text-[#4a3d2d]">{m.sampleOccurrences[0].translationPt}</span>
                         <AudioPlayButton
                           audioId={`phon-pt-${m.word}`}
                           text={m.sampleOccurrences[0].translationPt}

@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   analyzeInversionsAndPermutations,
+  buildDashboardSummary,
   discoverRecurringPhrasesSuffixArray,
   experimentalPhoneticSearch,
   findConsecutiveRepetitions,
@@ -46,6 +47,16 @@ console.log(`Ocorrências ressegmentadas (entre fronteiras) de יהוה: ${resse
 
 const els = searchELS(corpus, { query: 'תורה', bookSlug: 'genesis', minSkip: 49, maxSkip: 50 });
 console.log(`ELS 'תורה' em Gênesis (d=49..50): ${els.totalHits} ocorrências (esperado ao acaso: ${els.expectedRandomHits})`);
+
+const dash = buildDashboardSummary(corpus);
+console.log('\n=== DASHBOARD DETERMINÍSTICO ===');
+for (const d of dash.keyDiscoveries) {
+  console.log(`- ${d.id} (${d.query}): ${d.totalCount} ocorrências`);
+}
+if (dash.keyDiscoveries.length < 6 || dash.corpusTotals.letters !== 1196840) {
+  console.error('\nERRO: Dashboard determinístico inconsistente.');
+  process.exit(1);
+}
 
 if (!suite.allPassed) {
   console.error('\nERRO: Nem todos os testes passaram.');

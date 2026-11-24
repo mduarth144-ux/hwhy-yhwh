@@ -174,13 +174,13 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
   if (mode === 'validacao') {
     return (
       <div className="space-y-6">
-        <div className="bg-white border border-slate-200 rounded-md p-5 space-y-4">
+        <div className="qumran-glass gem-border rounded-xl p-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-base font-bold text-[#1f1912]">
                 Critérios de Aceitação (Seção 13) e Casos de Validação (Seção 14)
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#5c4d3c]">
                 Testes executados deterministicamente contra os 39 arquivos consonantais contínuos em tempo real.
               </p>
             </div>
@@ -188,7 +188,7 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
               type="button"
               disabled={loadingVal}
               onClick={loadValidation}
-              className="px-4 py-2 text-xs font-medium text-white bg-blue-700 hover:bg-blue-800 rounded cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 text-xs font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md cursor-pointer disabled:opacity-50"
             >
               {loadingVal ? 'Executando…' : 'Reexecutar suíte completa'}
             </button>
@@ -196,21 +196,21 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
 
           {validation && (
             <div className="space-y-5">
-              <div className="divide-y divide-slate-200 border border-slate-200 rounded">
+              <div className="divide-y qumran-divider qumran-glass-inset rounded-lg">
                 {validation.acceptanceTests.map((t, i) => (
                   <div key={i} className="p-3 flex items-start justify-between gap-4 text-xs">
                     <div className="flex items-start gap-2.5">
                       {t.passed ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0 mt-0.5" />
                       ) : (
                         <XCircle className="w-4 h-4 text-rose-700 shrink-0 mt-0.5" />
                       )}
                       <div>
-                        <div className="font-semibold text-slate-900">{t.name}</div>
-                        <div className="text-slate-600 mt-0.5">{t.details}</div>
+                        <div className="font-semibold text-[#1f1912]">{t.name}</div>
+                        <div className="text-[#4a3d2d] mt-0.5">{t.details}</div>
                       </div>
                     </div>
-                    <span className={`font-mono font-semibold ${t.passed ? 'text-emerald-700' : 'text-rose-700'}`}>
+                    <span className={`font-mono font-semibold ${t.passed ? 'text-[#047857]' : 'text-rose-700'}`}>
                       {t.passed ? 'APROVADO' : 'FALHA'}
                     </span>
                   </div>
@@ -218,25 +218,25 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
               </div>
 
               <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">
+                <h3 className="text-sm font-bold text-[#1f1912] mb-2">
                   Casos de validação bíblica da Seção 14 ({validation.validationCases.filter((c) => c.passed).length}/
                   {validation.validationCases.length})
                 </h3>
-                <div className="divide-y divide-slate-200 border border-slate-200 rounded">
+                <div className="divide-y qumran-divider qumran-glass-inset rounded-lg">
                   {validation.validationCases.map((c) => (
                     <div key={c.id} className="p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2">
                         {c.passed ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-[#047857] shrink-0" />
                         ) : (
                           <XCircle className="w-4 h-4 text-rose-700 shrink-0" />
                         )}
-                        <span className="font-medium text-slate-900">{c.label}</span>
-                        <span className="text-slate-400">·</span>
-                        <span className="text-slate-600">{c.reference}</span>
+                        <span className="font-semibold text-[#1f1912]">{c.label}</span>
+                        <span className="text-[#926c3c]">·</span>
+                        <span className="text-[#4a3d2d]">{c.reference}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-hebrew text-base text-slate-800 max-w-xl truncate" dir="rtl" lang="he">
+                        <span className="font-hebrew text-base text-[#1f1912] max-w-xl truncate" dir="rtl" lang="he">
                           {c.snippet}
                         </span>
                         <AudioPlayButton audioId={`val-case-${c.id}`} text={c.snippet} lang="he-IL" />
@@ -250,55 +250,55 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
         </div>
 
         {manifestData && (
-          <div className="bg-white border border-slate-200 rounded-md p-5 space-y-4">
+          <div className="qumran-glass gem-border rounded-xl p-5 space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-base font-bold text-[#1f1912]">
                   Manifesto do Corpus e Proveniência Sefaria-Export
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-[#5c4d3c]">
                   Edição: {manifestData.manifest.primary_edition} · Commit índice:{' '}
                   <span className="font-mono">{manifestData.manifest.index_commit_sha.slice(0, 16)}</span> · Curadoria:{' '}
                   {manifestData.manifest.curadoria}
                 </p>
               </div>
-              <div className="text-xs font-mono tabular-nums text-slate-700">
+              <div className="text-xs font-mono tabular-nums text-[#4a3d2d]">
                 {manifestData.manifest.canonical_books_count} livros · {manifestData.manifest.totals.chapters} cap ·{' '}
-                {manifestData.manifest.totals.verses.toLocaleString()} vers ·{' '}
-                {manifestData.manifest.totals.words.toLocaleString()} pal ·{' '}
-                {manifestData.manifest.totals.letters.toLocaleString()} letras
+                {manifestData.manifest.totals.verses.toLocaleString('pt-BR')} vers ·{' '}
+                {manifestData.manifest.totals.words.toLocaleString('pt-BR')} pal ·{' '}
+                {manifestData.manifest.totals.letters.toLocaleString('pt-BR')} letras
               </div>
             </div>
 
-            <div className="overflow-x-auto max-h-[420px] overflow-y-auto border border-slate-200 rounded">
+            <div className="overflow-x-auto max-h-[420px] overflow-y-auto qumran-glass-inset rounded-lg">
               <table className="w-full text-left border-collapse text-xs">
-                <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600">
+                <thead className="sticky top-0 bg-[#e8d6b3]/95 backdrop-blur-sm border-b qumran-divider text-[#4a3d2d]">
                   <tr>
-                    <th className="py-2 px-3 font-medium">#</th>
-                    <th className="py-2 px-3 font-medium">Livro</th>
-                    <th className="py-2 px-3 font-medium">Divisão</th>
-                    <th className="py-2 px-3 font-medium text-right">Cap.</th>
-                    <th className="py-2 px-3 font-medium text-right">Vers.</th>
-                    <th className="py-2 px-3 font-medium text-right">Palavras</th>
-                    <th className="py-2 px-3 font-medium text-right">Letras</th>
-                    <th className="py-2 px-3 font-medium">SHA-256 (stream)</th>
+                    <th className="py-2 px-3 font-semibold">#</th>
+                    <th className="py-2 px-3 font-semibold">Livro</th>
+                    <th className="py-2 px-3 font-semibold">Divisão</th>
+                    <th className="py-2 px-3 font-semibold text-right">Cap.</th>
+                    <th className="py-2 px-3 font-semibold text-right">Vers.</th>
+                    <th className="py-2 px-3 font-semibold text-right">Palavras</th>
+                    <th className="py-2 px-3 font-semibold text-right">Letras</th>
+                    <th className="py-2 px-3 font-semibold">SHA-256 (stream)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y qumran-divider">
                   {manifestData.manifest.books.map((b) => (
-                    <tr key={b.slug} className="hover:bg-slate-50">
-                      <td className="py-1.5 px-3 font-mono tabular-nums text-slate-500">{b.order}</td>
-                      <td className="py-1.5 px-3 font-medium text-slate-900">
-                        {b.ptTitle} <span className="font-hebrew text-sm text-slate-500 ml-1">{b.heTitle}</span>
+                    <tr key={b.slug} className="hover:bg-[#fefaf0]/35">
+                      <td className="py-1.5 px-3 font-mono tabular-nums text-[#5c4d3c]">{b.order}</td>
+                      <td className="py-1.5 px-3 font-semibold text-[#1f1912]">
+                        {b.ptTitle} <span className="font-hebrew text-sm text-[#0b3948] ml-1">{b.heTitle}</span>
                       </td>
-                      <td className="py-1.5 px-3 text-slate-600">
+                      <td className="py-1.5 px-3 text-[#4a3d2d]">
                         {b.division === 'Torah' ? 'Torá' : b.division === 'Prophets' ? 'Profetas (Nevi’im)' : 'Escritos (Ketuvim)'}
                       </td>
                       <td className="py-1.5 px-3 font-mono tabular-nums text-right">{b.chapters}</td>
                       <td className="py-1.5 px-3 font-mono tabular-nums text-right">{b.verses}</td>
-                      <td className="py-1.5 px-3 font-mono tabular-nums text-right">{b.words.toLocaleString()}</td>
-                      <td className="py-1.5 px-3 font-mono tabular-nums text-right">{b.letters.toLocaleString()}</td>
-                      <td className="py-1.5 px-3 font-mono text-[11px] text-slate-500">{b.stream_sha256.slice(0, 18)}…</td>
+                      <td className="py-1.5 px-3 font-mono tabular-nums text-right">{b.words.toLocaleString('pt-BR')}</td>
+                      <td className="py-1.5 px-3 font-mono tabular-nums text-right">{b.letters.toLocaleString('pt-BR')}</td>
+                      <td className="py-1.5 px-3 font-mono text-[11px] text-[#5c4d3c]">{b.stream_sha256.slice(0, 18)}…</td>
                     </tr>
                   ))}
                 </tbody>
@@ -307,14 +307,14 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
 
             {manifestData.algorithmVersions && (
               <div className="pt-2">
-                <h4 className="text-xs font-semibold text-slate-700 mb-2">Versões dos Algoritmos Registradas</h4>
+                <h4 className="text-xs font-bold text-[#4a3d2d] mb-2">Versões dos Algoritmos Registradas</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
                   {manifestData.algorithmVersions.map((a) => (
-                    <div key={a.algorithm} className="p-2.5 bg-slate-50 border border-slate-200 rounded">
-                      <div className="font-mono font-semibold text-slate-900">
+                    <div key={a.algorithm} className="p-2.5 qumran-glass-inset rounded-lg">
+                      <div className="font-mono font-bold text-[#0b3948]">
                         {a.algorithm}@{a.version}
                       </div>
-                      <div className="text-slate-600 mt-0.5">{a.description}</div>
+                      <div className="text-[#4a3d2d] mt-0.5">{a.description}</div>
                     </div>
                   ))}
                 </div>
@@ -329,38 +329,38 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <form onSubmit={handleSaveEntry} className="lg:col-span-5 bg-white border border-slate-200 rounded-md p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-slate-900">Novo registro no Caderno de Investigação (SQLite)</h2>
+        <form onSubmit={handleSaveEntry} className="lg:col-span-5 qumran-glass gem-border rounded-xl p-5 space-y-4">
+          <h2 className="text-sm font-bold text-[#1f1912]">Novo registro no Caderno de Investigação (SQLite)</h2>
 
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Título do achado / nota</label>
+            <label className="block text-xs text-[#5c4d3c] mb-1">Título do achado / nota</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex.: Declaração dupla em Dt 32:39"
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-600"
+              className="w-full px-3 py-2 text-sm border rounded"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Referência canônica</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Referência canônica</label>
               <input
                 type="text"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="Ex.: Deuteronômio 32:39"
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm border rounded"
               />
             </div>
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Camada epistemológica</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Camada epistemológica</label>
               <select
                 value={evidenceTier}
                 onChange={(e) => setEvidenceTier(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded bg-white"
+                className="w-full px-3 py-2 text-sm border rounded"
               >
                 <option value="evidencia_textual">Evidência textual</option>
                 <option value="confirmacao_lexical">Confirmação lexical</option>
@@ -372,55 +372,55 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
           </div>
 
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Trecho hebraico (opcional)</label>
+            <label className="block text-xs text-[#5c4d3c] mb-1">Trecho hebraico (opcional)</label>
             <input
               type="text"
               dir="rtl"
               lang="he"
               value={hebrewSnippet}
               onChange={(e) => setHebrewSnippet(e.target.value)}
-              className="w-full px-3 py-2 text-base font-hebrew border border-slate-300 rounded"
+              className="w-full px-3 py-2 text-base font-hebrew border rounded"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-slate-500 mb-1">Anotação / Hipótese do pesquisador</label>
+            <label className="block text-xs text-[#5c4d3c] mb-1">Anotação / Hipótese do pesquisador</label>
             <textarea
               required
               rows={4}
               value={hypothesis}
               onChange={(e) => setHypothesis(e.target.value)}
               placeholder="Descreva a observação separando claramente o dado textual da interpretação..."
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-blue-600"
+              className="w-full px-3 py-2 text-sm border rounded"
             />
           </div>
 
           <button
             type="submit"
             disabled={saving}
-            className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-700 hover:bg-blue-800 rounded transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full px-4 py-2 text-sm font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors cursor-pointer disabled:opacity-50"
           >
             {saving ? 'Gravando…' : 'Salvar no Caderno'}
           </button>
         </form>
 
         <div className="lg:col-span-7 space-y-6">
-          <div className="bg-white border border-slate-200 rounded-md p-5 space-y-4 no-print">
+          <div className="qumran-glass gem-border rounded-xl p-5 space-y-4 no-print">
             <div>
-              <h2 className="text-sm font-semibold text-slate-900">Exportação Reprodutível (Compatível com NotebookLM)</h2>
-              <p className="text-xs text-slate-500">
+              <h2 className="text-sm font-bold text-[#1f1912]">Exportação Reprodutível (Compatível com NotebookLM)</h2>
+              <p className="text-xs text-[#5c4d3c]">
                 Exporta fontes canônicas, hashes SHA-256, parâmetros, versões de algoritmos e hipóteses separadas.
               </p>
             </div>
 
             <div>
-              <label className="block text-xs text-slate-500 mb-1">Síntese de hipóteses para o relatório (opcional)</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Síntese de hipóteses para o relatório (opcional)</label>
               <textarea
                 rows={2}
                 value={reportHypotheses}
                 onChange={(e) => setReportHypotheses(e.target.value)}
                 placeholder="Notas metodológicas ou hipóteses a incluir na seção separada do relatório..."
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded"
+                className="w-full px-3 py-2 text-sm border rounded"
               />
             </div>
 
@@ -438,16 +438,16 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
                   type="button"
                   disabled={exporting}
                   onClick={() => handleExport(fmt)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#1f1912] qumran-glass-inset hover:bg-[#ebd8b5]/80 rounded cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3.5 h-3.5 text-[#0e4d64]" />
                   {lbl}
                 </button>
               ))}
               <button
                 type="button"
                 onClick={() => window.print()}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium text-slate-800 bg-white hover:bg-slate-50 border border-slate-300 rounded cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#fefaf0] bg-[#9a5410] hover:bg-[#78350f] rounded cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
                 Imprimir / PDF
@@ -455,14 +455,14 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
             </div>
           </div>
 
-          <div className="bg-white border border-slate-200 rounded-md divide-y divide-slate-200">
+          <div className="qumran-glass gem-border rounded-xl divide-y qumran-divider">
             <div className="p-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-slate-900">
+              <h3 className="text-sm font-bold text-[#1f1912]">
                 Anotações salvas ({notebookEntries.length})
               </h3>
             </div>
             {notebookEntries.length === 0 ? (
-              <div className="p-6 text-sm text-slate-500">
+              <div className="p-6 text-sm text-[#5c4d3c]">
                 Nenhuma anotação registrada ainda. Salve ocorrências diretamente de qualquer módulo ou preencha o formulário ao lado.
               </div>
             ) : (
@@ -470,23 +470,23 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
                 <div key={n.id} className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-sm font-semibold text-slate-900">{n.title}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-sm font-bold text-[#1f1912]">{n.title}</div>
+                      <div className="text-xs text-[#5c4d3c]">
                         {n.reference} · {n.evidence_tier} · <span className="font-mono">{n.created_at.slice(0, 19).replace('T', ' ')}</span>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleDeleteEntry(n.id)}
-                      className="text-slate-400 hover:text-rose-700 p-1 cursor-pointer no-print"
+                      className="text-[#6d5b45] hover:text-rose-700 p-1 cursor-pointer no-print"
                       aria-label="Excluir anotação"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                   {n.hebrew_snippet && (
-                    <div className="flex items-start justify-between gap-3 bg-slate-50 px-3 py-2 rounded border border-slate-100">
-                      <p className="flex-1 font-hebrew text-lg text-slate-800" dir="rtl" lang="he">
+                    <div className="flex items-start justify-between gap-3 qumran-glass-inset px-3 py-2 rounded-lg">
+                      <p className="flex-1 font-hebrew text-lg text-[#1f1912]" dir="rtl" lang="he">
                         {n.hebrew_snippet}
                       </p>
                       <AudioPlayButton
@@ -497,20 +497,20 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
                       />
                     </div>
                   )}
-                  <p className="text-sm text-slate-700 whitespace-pre-wrap">{n.hypothesis}</p>
+                  <p className="text-sm text-[#4a3d2d] whitespace-pre-wrap">{n.hypothesis}</p>
                 </div>
               ))
             )}
           </div>
 
           {searchHistory.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-md p-4 space-y-2 no-print">
-              <h3 className="text-xs font-semibold text-slate-700">Histórico reprodutível de consultas recentes</h3>
-              <div className="divide-y divide-slate-100 text-xs">
+            <div className="qumran-glass gem-border rounded-xl p-4 space-y-2 no-print">
+              <h3 className="text-xs font-bold text-[#1f1912]">Histórico reprodutível de consultas recentes</h3>
+              <div className="divide-y qumran-divider text-xs">
                 {searchHistory.slice(0, 10).map((h) => (
                   <div key={h.id} className="py-1.5 flex items-center justify-between gap-2">
-                    <span className="font-hebrew text-base text-slate-900" dir="rtl" lang="he">{h.query_summary}</span>
-                    <span className="font-mono tabular-nums text-slate-500">
+                    <span className="font-hebrew text-base font-bold text-[#0b3948]" dir="rtl" lang="he">{h.query_summary}</span>
+                    <span className="font-mono tabular-nums text-[#5c4d3c]">
                       {h.total_hits} ocorrências · {h.algorithm_version}
                     </span>
                   </div>
