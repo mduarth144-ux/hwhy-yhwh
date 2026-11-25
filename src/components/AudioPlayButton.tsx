@@ -5,7 +5,7 @@ import { subscribeSpeechState, toggleSpeech } from '../utils/speech';
 interface AudioPlayButtonProps {
   audioId: string;
   text: string;
-  lang: 'he-IL' | 'pt-BR';
+  lang: string;
   label?: string;
 }
 
@@ -21,14 +21,18 @@ export const AudioPlayButton: React.FC<AudioPlayButtonProps> = ({
   useEffect(() => subscribeSpeechState(setActiveId), []);
 
   const isPlaying = activeId === audioId;
-  const defaultTitle =
-    lang === 'he-IL'
+  const lowLang = (lang || 'pt-BR').toLowerCase();
+  const defaultTitle = lowLang.startsWith('he')
+    ? isPlaying
+      ? 'Parar áudio em Hebraico'
+      : 'Ouvir texto em Hebraico'
+    : lowLang.startsWith('pt')
       ? isPlaying
-        ? 'Parar áudio em Hebraico'
-        : 'Ouvir texto em Hebraico'
+        ? 'Parar áudio em Português'
+        : 'Ouvir texto em Português'
       : isPlaying
-        ? 'Parar áudio em PT-BR'
-        : 'Ouvir texto em Português (PT-BR)';
+        ? `Parar áudio (${lang})`
+        : `Ouvir texto (${lang})`;
 
   if (!text || !text.trim()) {
     return null;

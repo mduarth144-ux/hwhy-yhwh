@@ -204,17 +204,10 @@ def build_book(book_meta: dict) -> dict:
     if not isinstance(chapters, list) or len(chapters) == 0:
         raise ValueError(f"Capitulos invalidos ou vazios em {title}")
 
-    pt_chapters = None
-    if book_meta.get("portuguese_translation") and book_meta["portuguese_translation"].get("file"):
-        pt_path = os.path.join(ROOT_DIR, book_meta["portuguese_translation"]["file"])
-        if os.path.exists(pt_path):
-            with open(pt_path, "r", encoding="utf-8") as f:
-                pt_chapters = json.load(f).get("text")
-
     stream_parts = []
     refs = []          # [chapter, verse, startOffset, endOffset]
     words = []         # [chapter, verse, wordIndex, startOffset, endOffset, consWord, vocWord]
-    verses = []        # per-verse rich record for lossless display
+    verses = []        # per-verse rich record for lossless display (hebraico/aramaico puro)
     masoretic_diffs = []
     authorized_lacunae = []
     offset = 0
@@ -282,11 +275,6 @@ def build_book(book_meta: dict) -> dict:
                     "items": parser.ketiv_qere,
                 })
 
-            pt_text = ""
-            if pt_chapters and c_idx - 1 < len(pt_chapters) and isinstance(pt_chapters[c_idx - 1], list):
-                if v_idx - 1 < len(pt_chapters[c_idx - 1]):
-                    pt_text = clean_translation_html(pt_chapters[c_idx - 1][v_idx - 1])
-
             verses.append({
                 "c": c_idx,
                 "v": v_idx,
@@ -295,7 +283,6 @@ def build_book(book_meta: dict) -> dict:
                 "orig": verse_raw,
                 "voc": voc_no_cant,
                 "cons": " ".join(verse_cons_tokens),
-                "pt": pt_text,
             })
 
     stream = "".join(stream_parts)

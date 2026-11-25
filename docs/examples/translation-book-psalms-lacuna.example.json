@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "translationId": "exemplo_pt",
+  "bookId": "psalms",
+  "title": "Salmos",
+  "canonGroup": "writings",
+  "language": "pt-BR",
+  "versification": {
+    "system": "christian_standard",
+    "mappedToMasoretic": true,
+    "validated": true,
+    "sourceNumberingPreserved": true,
+    "notes": "Exemplo de representação explícita de sobrescrito salmódico e mapeamento N:1 / 1:N."
+  },
+  "text": [
+    [
+      null,
+      "Ó Senhor, como se têm multiplicado os meus adversários!"
+    ]
+  ],
+  "verseStates": [
+    {
+      "chapter": 3,
+      "verse": 1,
+      "status": "non_conventional",
+      "sourceRef": "Salmos 3 (título)",
+      "masoreticRef": "Salmos 3:1",
+      "note": "Sobrescrito salmódico não numerado como versículo nesta tradução; ausente sem erro editorial.",
+      "validated": true
+    }
+  ],
+  "versificationMap": [
+    {
+      "sourceRef": "3:1",
+      "targetRef": "3:2",
+      "relation": "1:1",
+      "validated": true,
+      "note": "Deslocamento +1 no texto massorético devido ao sobrescrito no v.1."
+    }
+  ]
+}

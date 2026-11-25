@@ -4,10 +4,14 @@ import {
   BookOpen,
   Compass,
   GitCompare,
+  History,
   Layers,
+  Pin,
+  Plus,
   Repeat,
   Search,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
 import type {
   ChapterComparePreset,
@@ -20,6 +24,7 @@ import { AudioPlayButton } from './AudioPlayButton';
 interface DashboardViewProps {
   data: DashboardPayload | null;
   loading: boolean;
+  onRefreshDashboard: () => void;
   onNavigateSearch: (preset: Omit<SearchPresetPayload, 'nonce'>) => void;
   onCompareChapters: (preset: Omit<ChapterComparePreset, 'nonce'>) => void;
   onInspectChapter: (slug: string, chapter: number) => void;
@@ -37,18 +42,54 @@ const CATEGORY_LABELS: Record<string, string> = {
 export const DashboardView: React.FC<DashboardViewProps> = ({
   data,
   loading,
+  onRefreshDashboard,
   onNavigateSearch,
   onCompareChapters,
   onInspectChapter,
   onNavigateModule,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [pinLabel, setPinLabel] = useState('');
+  const [pinQuery, setPinQuery] = useState('');
+  const [pinning, setPinning] = useState(false);
 
   const filteredDiscoveries = useMemo(() => {
     if (!data) return [];
     if (selectedCategory === 'all') return data.keyDiscoveries;
     return data.keyDiscoveries.filter((d) => d.category === selectedCategory);
   }, [data, selectedCategory]);
+
+  const handleAddPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pinLabel.trim() || !pinQuery.trim()) return;
+    setPinning(true);
+    try {
+      const res = await fetch('/api/dashboard/pins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          label: pinLabel.trim(),
+          query_text: pinQuery.trim(),
+          module: 'busca_continua',
+          parameters: { division: 'all', bookSlug: 'all', boundaryFilter: 'all' },
+        }),
+      });
+      if (res.ok) {
+        setPinLabel('');
+        setPinQuery('');
+        onRefreshDashboard();
+      }
+    } catch {
+      // evita rejeição não tratada
+    } finally {
+      setPinning(false);
+    }
+  };
+
+  const handleDeletePin = async (id: number) => {
+    await fetch(`/api/dashboard/pins/${id}`, { method: 'DELETE' }).catch(() => {});
+    onRefreshDashboard();
+  };
 
   if (loading || !data) {
     return (
@@ -72,6 +113,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   }
 
   const maxBookLetters = data.topBooksByLetters[0]?.letters ?? 1;
+  const activeTranslationLabel = data.translationName || 'Almeida Corrigida Fiel (ACF)';
+  const pinnedList = data.pinnedSearches ?? [];
+  const recentList = data.recentSearches ?? [];
 
   return (
     <div className="space-y-7">
@@ -108,7 +152,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <span className="font-mono tabular-nums font-semibold text-[#1f1912]">
                 {data.corpusTotals.letters.toLocaleString('pt-BR')}
               </span>{' '}
-              letras sem truncamento), com separação entre palavras exatas, ressegmentações no stream, cruzamentos de versículos e tradução integral em PT-BR (ACF).
+              letras sem truncamento), com separação explícita entre palavras exatas e combinações contínuas no stream, além da tradução ativa{' '}
+              <strong className="text-[#1f1912]">{activeTranslationLabel}</strong>.
             </p>
           </div>
 
@@ -183,7 +228,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="text-lg lg:text-xl font-mono font-bold tabular-nums text-[#1f1912] mt-0.5">
               {data.corpusTotals.verses.toLocaleString('pt-BR')}
             </div>
-            <div className="text-[11px] text-[#6d5b45]">Com alinhamento PT-BR</div>
+            <div className="text-[11px] text-[#6d5b45] truncate" title={activeTranslationLabel}>
+              Tradução: {activeTranslationLabel}
+            </div>
           </div>
 
           <div className="qumran-glass-inset rounded-lg p-3.5">
@@ -214,6 +261,171 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </section>
 
+      {/* Seção 0.5: Pesquisas Fixadas pelo Pesquisador & Investigações Recentes (SQLite) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-7 qumran-glass gem-border rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-base font-bold text-[#1f1912] inline-flex items-center gap-2">
+                <Pin className="w-4 h-4 text-[#9a5410]" />
+                Pesquisas Personalizadas Fixadas ({pinnedList.length})
+              </h3>
+              <p className="text-xs text-[#5c4d3c]">
+                Fixe sequências consonantais para recalcular ao vivo o total exato sempre que abrir o Dashboard.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAddPin} className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
+            <div className="sm:col-span-5">
+              <label className="block text-[11px] text-[#5c4d3c] mb-0.5">Rótulo do achado</label>
+              <input
+                type="text"
+                value={pinLabel}
+                onChange={(e) => setPinLabel(e.target.value)}
+                placeholder="Ex.: Shema (שמע ישראל)"
+                className="w-full px-2.5 py-1.5 text-xs border rounded"
+              />
+            </div>
+            <div className="sm:col-span-5">
+              <label className="block text-[11px] text-[#5c4d3c] mb-0.5">Sequência consonantal</label>
+              <input
+                type="text"
+                dir="rtl"
+                lang="he"
+                value={pinQuery}
+                onChange={(e) => setPinQuery(e.target.value)}
+                placeholder="Ex.: שמעישראל"
+                className="w-full px-2.5 py-1 text-base font-hebrew border rounded"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <button
+                type="submit"
+                disabled={pinning || !pinLabel.trim() || !pinQuery.trim()}
+                className="w-full inline-flex items-center justify-center gap-1 px-3 py-2 text-xs font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] rounded disabled:opacity-45 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Fixar
+              </button>
+            </div>
+          </form>
+
+          {pinnedList.length === 0 ? (
+            <div className="qumran-glass-inset rounded-lg p-3 text-xs text-[#5c4d3c]">
+              Nenhuma pesquisa fixada ainda. Cadastre uma sequência acima para acompanhá-la no painel inicial.
+            </div>
+          ) : (
+            <div className="divide-y qumran-divider qumran-glass-inset rounded-lg">
+              {pinnedList.map((pin) => {
+                const count = pin.live_total_hits ?? pin.last_total_hits;
+                let parsedParams: Record<string, unknown> = {};
+                try {
+                  parsedParams = JSON.parse(pin.parameters_json) as Record<string, unknown>;
+                } catch {
+                  parsedParams = {};
+                }
+                return (
+                  <div key={pin.id} className="p-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onNavigateSearch({
+                            subMode: 'stream',
+                            query: pin.query_text,
+                            division: typeof parsedParams.division === 'string' ? parsedParams.division : 'all',
+                            bookSlug: typeof parsedParams.bookSlug === 'string' ? parsedParams.bookSlug : 'all',
+                            boundaryFilter:
+                              typeof parsedParams.boundaryFilter === 'string' ? parsedParams.boundaryFilter : 'all',
+                            normalizeFinals: Boolean(parsedParams.normalizeFinals),
+                          })
+                        }
+                        className="font-semibold text-[#0e4d64] hover:text-[#9a5410] hover:underline text-left cursor-pointer"
+                      >
+                        {pin.label}
+                      </button>
+                      <div className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">
+                        {pin.query_text}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="font-mono font-bold tabular-nums text-sm text-[#0b3948]">
+                        {count.toLocaleString('pt-BR')}×
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeletePin(pin.id)}
+                        className="text-[#6d5b45] hover:text-rose-700 p-1 cursor-pointer"
+                        aria-label={`Remover pesquisa fixada ${pin.label}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-5 qumran-glass gem-border rounded-xl p-5 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="text-base font-bold text-[#1f1912] inline-flex items-center gap-2">
+                <History className="w-4 h-4 text-[#0e4d64]" />
+                Investigações Recentes ({recentList.length})
+              </h3>
+              <p className="text-xs text-[#5c4d3c]">
+                Consultas persistidas em SQLite para retomada instantânea
+              </p>
+            </div>
+          </div>
+
+          {recentList.length === 0 ? (
+            <div className="qumran-glass-inset rounded-lg p-3 text-xs text-[#5c4d3c]">
+              As pesquisas executadas na Busca Contínua aparecerão aqui automaticamente.
+            </div>
+          ) : (
+            <div className="divide-y qumran-divider qumran-glass-inset rounded-lg max-h-60 overflow-y-auto">
+              {recentList.slice(0, 8).map((rec) => {
+                let parsed: Record<string, unknown> = {};
+                try {
+                  parsed = JSON.parse(rec.parameters_json) as Record<string, unknown>;
+                } catch {
+                  parsed = {};
+                }
+                return (
+                  <button
+                    key={rec.id}
+                    type="button"
+                    onClick={() =>
+                      onNavigateSearch({
+                        subMode: 'stream',
+                        query: rec.query_summary,
+                        division: typeof parsed.division === 'string' ? parsed.division : 'all',
+                        bookSlug: typeof parsed.bookSlug === 'string' ? parsed.bookSlug : 'all',
+                        boundaryFilter:
+                          typeof parsed.boundaryFilter === 'string' ? parsed.boundaryFilter : 'all',
+                        normalizeFinals: Boolean(parsed.normalizeFinals),
+                      })
+                    }
+                    className="w-full text-left p-2.5 hover:bg-[#fefaf0]/40 flex items-center justify-between gap-2 text-xs cursor-pointer"
+                  >
+                    <span className="font-hebrew text-base font-bold text-[#0b3948] truncate" dir="rtl" lang="he">
+                      {rec.query_summary}
+                    </span>
+                    <span className="font-mono tabular-nums text-[#5c4d3c] shrink-0">
+                      {rec.total_hits.toLocaleString('pt-BR')}×
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Seção 1: Principais Descobertas Textuais (ani ani, ani ani hu, yhwh yhwh, anokhi, qadosh...) */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -222,7 +434,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               Descobertas em Destaque no Fluxo Contínuo
             </h3>
             <p className="text-xs text-[#5c4d3c]">
-              Contagem exata de ocorrências de <span className="font-hebrew text-sm text-[#1f1912]" dir="rtl">אֲנִי אֲנִי</span>,{' '}
+              Contagem exata de palavras íntegras separada das correspondências entre fronteiras no stream para{' '}
+              <span className="font-hebrew text-sm text-[#1f1912]" dir="rtl">אֲנִי אֲנִי</span>,{' '}
               <span className="font-hebrew text-sm text-[#1f1912]" dir="rtl">אֲנִי אֲנִי הוּא</span>,{' '}
               <span className="font-hebrew text-sm text-[#1f1912]" dir="rtl">יְהוָה יְהוָה</span> e fórmulas correlatas
             </p>
@@ -249,10 +462,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
           {filteredDiscoveries.map((item) => {
             const exactWords =
+              item.exactWordsCount ??
               (item.boundaryBreakdown.exact_word ?? 0) + (item.boundaryBreakdown.multi_word ?? 0);
             const resegmented = item.boundaryBreakdown.resegmented ?? 0;
             const crossVerse = item.boundaryBreakdown.cross_verse ?? 0;
             const substring = item.boundaryBreakdown.substring ?? 0;
+            const nonWordCount = item.nonWordStreamCount ?? resegmented + crossVerse + substring;
 
             return (
               <article
@@ -260,7 +475,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="qumran-glass gem-border gem-border-interactive rounded-xl p-5 flex flex-col justify-between gap-4"
               >
                 <div className="space-y-3">
-                  {/* Cabeçalho do card com hebraico lapidado + contador */}
+                  {/* Cabeçalho do card com hebraico lapidado + contador separado */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -273,9 +488,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                     <div className="text-right shrink-0">
                       <div className="text-2xl lg:text-3xl font-mono font-bold tabular-nums text-[#0b3948]">
-                        {item.totalCount.toLocaleString('pt-BR')}
+                        {exactWords.toLocaleString('pt-BR')}
                       </div>
-                      <div className="text-[11px] text-[#5c4d3c]">no stream</div>
+                      <div className="text-[11px] text-[#047857] font-medium">palavras exatas</div>
+                      <div className="text-[11px] text-[#5c4d3c] font-mono tabular-nums">
+                        +{nonWordCount.toLocaleString('pt-BR')} stream ({item.totalCount.toLocaleString('pt-BR')} total)
+                      </div>
                     </div>
                   </div>
 
@@ -387,6 +605,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <div className="flex items-start justify-between gap-3">
                           <p className="flex-1 text-xs text-[#4a3d2d] leading-relaxed">
                             {item.sample.translationPt}
+                            <span className="text-[11px] text-[#6d5b45] ml-1.5">
+                              ({item.sample.translationPtSource ?? activeTranslationLabel})
+                            </span>
                           </p>
                           <AudioPlayButton
                             audioId={`dash-sample-pt-${item.id}`}

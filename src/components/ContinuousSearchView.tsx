@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { BookmarkPlus, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { AlertCircle, BookmarkPlus, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import type { ManifestBook, OccurrenceItem, SearchPresetPayload } from '../types';
+import { fetchJson } from '../utils/api';
 import { AudioPlayButton } from './AudioPlayButton';
 import { HebrewKeyboard } from './HebrewKeyboard';
 import { HighlightedHebrewText } from './HighlightedHebrewText';
@@ -76,6 +77,7 @@ interface ElsResult {
 
 interface ContinuousSearchViewProps {
   books: ManifestBook[];
+  preferredTranslationId?: string;
   initialPreset?: SearchPresetPayload | null;
   onSaveToNotebook: (item: {
     title: string;
@@ -89,6 +91,7 @@ interface ContinuousSearchViewProps {
 
 export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
   books,
+  preferredTranslationId,
   initialPreset,
   onSaveToNotebook,
   onInspectChapter,
@@ -109,9 +112,17 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
   const [includeNegative, setIncludeNegative] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [streamResult, setStreamResult] = useState<ContinuousSearchResult | null>(null);
   const [elsResult, setElsResult] = useState<ElsResult | null>(null);
   const [expandedElsWindows, setExpandedElsWindows] = useState<Record<number, boolean>>({});
+  const activeAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      activeAbortRef.current?.abort();
+    };
+  }, []);
 
   const executeStreamSearch = async (params: {
     targetPage: number;
@@ -122,12 +133,18 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
     norm: boolean;
     cb: boolean;
   }) => {
+    activeAbortRef.current?.abort();
+    const controller = new AbortController();
+    activeAbortRef.current = controller;
+
     setLoading(true);
+    setError(null);
     setPage(params.targetPage);
     try {
-      const res = await fetch('/api/search/continuous', {
+      const json = await fetchJson<ContinuousSearchResult>('/api/search/continuous', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           query: params.q,
           division: params.div,
@@ -137,12 +154,17 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
           crossBooks: params.cb,
           page: params.targetPage,
           pageSize: 40,
+          translationId: preferredTranslationId,
         }),
       });
-      const json = (await res.json()) as ContinuousSearchResult;
       setStreamResult(json);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError(err instanceof Error ? err.message : 'Erro ao executar busca no stream contínuo.');
     } finally {
-      setLoading(false);
+      if (activeAbortRef.current === controller) {
+        setLoading(false);
+      }
     }
   };
 
@@ -154,11 +176,17 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
     neg: boolean;
     norm: boolean;
   }) => {
+    activeAbortRef.current?.abort();
+    const controller = new AbortController();
+    activeAbortRef.current = controller;
+
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/search/els', {
+      const json = await fetchJson<ElsResult>('/api/search/els', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           query: params.q,
           bookSlug: params.bk,
@@ -166,12 +194,17 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
           maxSkip: params.maxS,
           includeNegative: params.neg,
           normalizeFinals: params.norm,
+          translationId: preferredTranslationId,
         }),
       });
-      const json = (await res.json()) as ElsResult;
       setElsResult(json);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      setError(err instanceof Error ? err.message : 'Erro ao executar varredura ELS.');
     } finally {
-      setLoading(false);
+      if (activeAbortRef.current === controller) {
+        setLoading(false);
+      }
     }
   };
 
@@ -183,16 +216,18 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
       const nextDiv = initialPreset.division ?? 'all';
       const nextBk = initialPreset.bookSlug ?? 'all';
       const nextBf = initialPreset.boundaryFilter ?? 'all';
+      const nextNorm = Boolean(initialPreset.normalizeFinals);
       setDivision(nextDiv);
       setBookSlug(nextBk);
       setBoundaryFilter(nextBf);
+      setNormalizeFinals(nextNorm);
       executeStreamSearch({
         targetPage: 1,
         q: initialPreset.query,
         div: nextDiv,
         bk: nextBk,
         bf: nextBf,
-        norm: false,
+        norm: nextNorm,
         cb: false,
       });
     } else {
@@ -458,6 +493,22 @@ export const ContinuousSearchView: React.FC<ContinuousSearchViewProps> = ({
           onSelectPreset={(val) => setQuery(val)}
         />
       </form>
+
+      {error && (
+        <div role="alert" className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-rose-900 bg-rose-100/85 border border-rose-300 rounded-xl">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => (subMode === 'stream' ? runStreamSearch(1) : runElsSearch())}
+            className="px-2.5 py-1 font-semibold bg-rose-900 text-white rounded hover:bg-rose-800 cursor-pointer shrink-0"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
 
       {subMode === 'stream' && streamResult && (
         <div className="space-y-4">

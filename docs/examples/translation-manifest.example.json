@@ -1,0 +1,57 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "exemplo_pt",
+  "name": "Edição de Exemplo Multi-Cânone (PT-BR)",
+  "sigla": "EXPT",
+  "language": "pt-BR",
+  "edition": "Exemplo Estrutural v1",
+  "revision": "2026.1",
+  "origin": {
+    "sourceLabel": "yawe-bible-importer (contrato local)",
+    "importer": "yawe-bible-importer@1.0.0",
+    "importedAtUtc": "2026-11-24T16:00:00Z"
+  },
+  "copyright": {
+    "license": "Domínio Público / Uso Local",
+    "restrictedDistribution": false,
+    "notice": "Arquivo mínimo ilustrativo para validação de schema."
+  },
+  "canon": "catholic_73",
+  "versification": {
+    "system": "christian_standard",
+    "mappedToMasoretic": true,
+    "validationStatus": "partial",
+    "notes": "Salmos mapeados parcialmente; deuterocanônicos sem original massorético indexado."
+  },
+  "validation": {
+    "status": "validated",
+    "validatedAtUtc": "2026-11-24T16:00:00Z",
+    "validator": "yawe-schema-check"
+  },
+  "books": [
+    {
+      "bookId": "psalms",
+      "title": "Salmos",
+      "canonGroup": "writings",
+      "order": 27,
+      "file": "psalms.json",
+      "chapters": 1,
+      "verses": 2,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "versificationStatus": "mapped_validated",
+      "lacunaeCount": 1
+    },
+    {
+      "bookId": "matthew",
+      "title": "Evangelho segundo Mateus",
+      "canonGroup": "new_testament",
+      "order": 40,
+      "file": "matthew.json",
+      "chapters": 1,
+      "verses": 2,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "versificationStatus": "native_unmapped",
+      "lacunaeCount": 0
+    }
+  ]
+}

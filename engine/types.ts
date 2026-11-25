@@ -34,7 +34,7 @@ export interface VerseRecord {
   orig: string;
   voc: string;
   cons: string;
-  pt: string;
+  pt?: string;
 }
 
 export interface WordEntry {
@@ -71,6 +71,18 @@ export interface BookData {
   ptVersionTitle: string | null;
 }
 
+export interface InvolvedVerseDetail {
+  chapter: number;
+  verse: number;
+  reference: string;
+  vocalized: string;
+  consonantal: string;
+  stream: string;
+  translationPt: string;
+  translationState?: string | null;
+  translationNote?: string | null;
+}
+
 export interface OccurrenceResult {
   id: string;
   book: string;
@@ -96,9 +108,15 @@ export interface OccurrenceResult {
   verseConsonantal: string;
   verseStream: string;
   contextBefore: string;
+  contextBeforeRef?: string;
+  contextBeforePt?: string;
   contextAfter: string;
+  contextAfterRef?: string;
+  contextAfterPt?: string;
+  involvedVerses?: InvolvedVerseDetail[];
   translationPt: string;
   translationPtSource: string | null;
+  translationId?: string;
   edition: string;
   language: 'Hebraico Bíblico' | 'Aramaico Bíblico';
   parametersSummary: string;
@@ -107,6 +125,7 @@ export interface OccurrenceResult {
   cost?: number;
   distance?: number;
   elsSkip?: number;
+  matchType?: 'exact_consonantal' | 'phonetic_approximation';
 }
 
 export interface LexiconStats {

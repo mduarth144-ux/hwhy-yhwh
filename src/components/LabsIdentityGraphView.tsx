@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FlaskConical, Network } from 'lucide-react';
+import { AlertCircle, Eye, FlaskConical, Network, Sparkles } from 'lucide-react';
 import type { ManifestBook, OccurrenceItem } from '../types';
+import { fetchJson } from '../utils/api';
 import { AudioPlayButton } from './AudioPlayButton';
 import { OccurrenceList } from './OccurrenceList';
 
@@ -52,6 +53,69 @@ interface LabsResponse {
   note: string;
 }
 
+interface MasoreticLabResponse {
+  scope: {
+    division: string;
+    bookSlug: string;
+    booksCount: number;
+    totalVersesScanned: number;
+  };
+  availableSigns: Array<{
+    id: string;
+    label: string;
+    hebrewExample: string;
+    category: 'vogal' | 'diacritico' | 'separador' | 'cantilacao';
+    description: string;
+    versesWithSign: number;
+  }>;
+  tetragrammaton: {
+    totalOccurrences: number;
+    distinctVocalizedFormsCount: number;
+    forms: Array<{
+      vocalizedForm: string;
+      consonantal: string;
+      count: number;
+      percent: number;
+      niqqudProfile: string;
+      traditionNote: string;
+      divisionCounts: { Torah: number; Prophets: number; Writings: number };
+      samples: Array<{
+        reference: string;
+        slug: string;
+        chapter: number;
+        verse: number;
+        verseOriginal: string;
+        verseVocalized: string;
+        verseConsonantal: string;
+        verseStream: string;
+        translationPt: string;
+      }>;
+    }>;
+    methodologicalNote: string;
+  };
+  signSearch: {
+    selectedSigns: string[];
+    matchMode: 'word_all' | 'verse_all';
+    consonantalFilter: string;
+    totalMatchedVerses: number;
+    page: number;
+    pageSize: number;
+    items: Array<{
+      reference: string;
+      slug: string;
+      chapter: number;
+      verse: number;
+      matchedTokens: string[];
+      verseOriginal: string;
+      verseVocalized: string;
+      verseConsonantal: string;
+      verseStream: string;
+      translationPt: string;
+    }>;
+  };
+  algorithmVersion: string;
+}
+
 const LAB_LIST = [
   { id: 'misterio', title: '01. Mistério e Revelação' },
   { id: 'identidade', title: '02. Identidade' },
@@ -70,6 +134,7 @@ const LAB_COLORS: Record<string, string> = {
 
 interface LabsIdentityGraphViewProps {
   books: ManifestBook[];
+  preferredTranslationId?: string;
   onSaveToNotebook: (item: {
     title: string;
     reference: string;
@@ -82,10 +147,11 @@ interface LabsIdentityGraphViewProps {
 
 export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
   books,
+  preferredTranslationId,
   onSaveToNotebook,
   onInspectChapter,
 }) => {
-  const [subTab, setSubTab] = useState<'labs' | 'identity' | 'graph'>('labs');
+  const [subTab, setSubTab] = useState<'labs' | 'identity' | 'masoretic' | 'graph'>('labs');
   const [selectedLabs, setSelectedLabs] = useState<string[]>(['misterio', 'pastor_salvacao_shaddai_ventre']);
   const [enableCrossings, setEnableCrossings] = useState(true);
   const [scopeBook, setScopeBook] = useState('all');
@@ -93,21 +159,36 @@ export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
   const [identityData, setIdentityData] = useState<IdentityResponse | null>(null);
   const [selectedTermOccs, setSelectedTermOccs] = useState<OccurrenceItem[] | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
+  // Masoretic lab state (§12)
+  const [masSelectedSigns, setMasSelectedSigns] = useState<string[]>(['holam', 'maqaf']);
+  const [masMatchMode, setMasMatchMode] = useState<'word_all' | 'verse_all'>('word_all');
+  const [masConsFilter, setMasConsFilter] = useState('');
+  const [masBookSlug, setMasBookSlug] = useState('all');
+  const [masPage, setMasPage] = useState(1);
+  const [masData, setMasData] = useState<MasoreticLabResponse | null>(null);
+  const [expandedTetraForm, setExpandedTetraForm] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const executeLabs = async (labs = selectedLabs, cross = enableCrossings, bk = scopeBook) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/labs/run', {
+      const json = await fetchJson<LabsResponse>('/api/labs/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           selectedLabIds: labs,
           enableCrossings: cross,
           bookSlug: bk,
+          translationId: preferredTranslationId,
         }),
       });
-      setLabsData((await res.json()) as LabsResponse);
+      setLabsData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao executar laboratórios.');
     } finally {
       setLoading(false);
     }
@@ -115,9 +196,40 @@ export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
 
   const loadIdentity = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/labs/identity');
-      setIdentityData((await res.json()) as IdentityResponse);
+      const q = preferredTranslationId ? `?translationId=${encodeURIComponent(preferredTranslationId)}` : '';
+      const json = await fetchJson<IdentityResponse>(`/api/labs/identity${q}`);
+      setIdentityData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar declarações de identidade.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const executeMasoreticLab = async (targetPage = 1) => {
+    setLoading(true);
+    setError(null);
+    setMasPage(targetPage);
+    try {
+      const json = await fetchJson<MasoreticLabResponse>('/api/labs/masoretic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          selectedSigns: masSelectedSigns,
+          matchMode: masMatchMode,
+          consonantalFilter: masConsFilter,
+          division: 'all',
+          bookSlug: masBookSlug,
+          page: targetPage,
+          pageSize: 20,
+          translationId: preferredTranslationId,
+        }),
+      });
+      setMasData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao executar Laboratório Massorético.');
     } finally {
       setLoading(false);
     }
@@ -134,6 +246,10 @@ export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
       }
       return [...prev, id];
     });
+  };
+
+  const toggleMasSign = (id: string) => {
+    setMasSelectedSigns((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   // Layout radial deterministico para grafo SVG de co-ocorrencia
@@ -184,6 +300,21 @@ export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
             </button>
             <button
               type="button"
+              onClick={() => {
+                setSubTab('masoretic');
+                if (!masData) executeMasoreticLab(1);
+              }}
+              className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+                subTab === 'masoretic'
+                  ? 'bg-[#0e4d64] text-[#fefaf0] shadow-xs'
+                  : 'text-[#4a3d2d] hover:text-[#1f1912]'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Laboratório Massorético
+            </button>
+            <button
+              type="button"
               onClick={() => setSubTab('graph')}
               className={`px-3 py-1.5 text-xs font-semibold rounded transition-colors cursor-pointer ${
                 subTab === 'graph'
@@ -199,7 +330,14 @@ export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
           </span>
         </div>
 
-        {subTab !== 'identity' && (
+        {error && (
+          <div role="alert" className="flex items-center gap-2 px-3 py-2 text-xs text-rose-900 bg-rose-100/85 border border-rose-300 rounded-lg">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {(subTab === 'labs' || subTab === 'graph') && (
           <div className="space-y-3 pt-2 border-t qumran-divider">
             <div className="flex flex-wrap items-center gap-2">
               {LAB_LIST.map((lab) => {
@@ -475,6 +613,302 @@ export const LabsIdentityGraphView: React.FC<LabsIdentityGraphViewProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {subTab === 'masoretic' && masData && (
+        <div className="space-y-6">
+          {/* Auditoria do Tetragrama */}
+          <section className="qumran-glass gem-border rounded-xl p-5 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-[#1f1912]">
+                  Auditoria de Vocalizações Massoréticas do Tetragrama (<span className="font-hebrew text-xl gem-hebrew" dir="rtl">יהוה</span>)
+                </h3>
+                <p className="text-xs text-[#5c4d3c]">
+                  Total no escopo selecionado: <strong className="font-mono text-[#0b3948]">{masData.tetragrammaton.totalOccurrences.toLocaleString('pt-BR')}</strong> ocorrências em{' '}
+                  <strong className="font-mono text-[#9a5410]">{masData.tetragrammaton.distinctVocalizedFormsCount}</strong> formas vocalizadas atestadas.
+                </p>
+              </div>
+              <span className="text-[11px] font-mono text-[#5c4d3c]">{masData.algorithmVersion}</span>
+            </div>
+
+            <div className="bg-[#f59e0b]/12 border border-[#b45309]/35 rounded-lg px-4 py-2.5 text-xs text-[#78350f]">
+              {masData.tetragrammaton.methodologicalNote}
+            </div>
+
+            <div className="overflow-x-auto qumran-glass-inset rounded-lg">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b qumran-divider bg-[#e8d6b3]/60 text-[#4a3d2d]">
+                    <th className="py-2 px-3 font-semibold">Grafia vocalizada</th>
+                    <th className="py-2 px-3 font-semibold">Perfil de sinais (niqqud)</th>
+                    <th className="py-2 px-3 font-semibold text-right">Total</th>
+                    <th className="py-2 px-3 font-semibold text-right">%</th>
+                    <th className="py-2 px-3 font-semibold text-right">Torá / Prof. / Escr.</th>
+                    <th className="py-2 px-3 font-semibold">Nota tradicional</th>
+                    <th className="py-2 px-3 font-semibold text-right">Amostras</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y qumran-divider">
+                  {masData.tetragrammaton.forms.map((f) => {
+                    const isOpen = expandedTetraForm === f.vocalizedForm;
+                    return (
+                      <React.Fragment key={f.vocalizedForm}>
+                        <tr className="hover:bg-[#fefaf0]/35">
+                          <td className="py-2 px-3">
+                            <div className="inline-flex items-center gap-2">
+                              <span className="font-hebrew text-xl font-bold text-[#0b3948]" dir="rtl" lang="he">
+                                {f.vocalizedForm}
+                              </span>
+                              <AudioPlayButton
+                                audioId={`mas-tetra-${f.vocalizedForm}`}
+                                text={f.vocalizedForm}
+                                lang="he-IL"
+                              />
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 font-mono text-[#4a3d2d]">{f.niqqudProfile}</td>
+                          <td className="py-2 px-3 font-mono tabular-nums text-right font-bold text-[#1f1912]">
+                            {f.count.toLocaleString('pt-BR')}
+                          </td>
+                          <td className="py-2 px-3 font-mono tabular-nums text-right text-[#5c4d3c]">
+                            {f.percent}%
+                          </td>
+                          <td className="py-2 px-3 font-mono tabular-nums text-right text-[#4a3d2d]">
+                            {f.divisionCounts.Torah} / {f.divisionCounts.Prophets} / {f.divisionCounts.Writings}
+                          </td>
+                          <td className="py-2 px-3 text-[#4a3d2d] max-w-xs">{f.traditionNote}</td>
+                          <td className="py-2 px-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedTetraForm(isOpen ? null : f.vocalizedForm)
+                              }
+                              className="inline-flex items-center gap-1 text-[#0e4d64] hover:underline cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              {isOpen ? 'Ocultar' : `Ver (${f.samples.length})`}
+                            </button>
+                          </td>
+                        </tr>
+                        {isOpen && (
+                          <tr>
+                            <td colSpan={7} className="p-3 bg-[#fefaf0]/40 space-y-2">
+                              {f.samples.map((smp, sIdx) => (
+                                <div key={sIdx} className="qumran-glass-inset p-3 rounded space-y-1.5">
+                                  <div className="flex items-center justify-between">
+                                    <button
+                                      type="button"
+                                      onClick={() => onInspectChapter(smp.slug, smp.chapter)}
+                                      className="font-semibold text-[#0e4d64] hover:underline cursor-pointer"
+                                    >
+                                      {smp.reference}
+                                    </button>
+                                    <AudioPlayButton
+                                      audioId={`mas-smp-he-${f.vocalizedForm}-${sIdx}`}
+                                      text={smp.verseVocalized}
+                                      lang="he-IL"
+                                      label="Ouvir HE"
+                                    />
+                                  </div>
+                                  <p className="font-hebrew text-lg text-[#1f1912]" dir="rtl" lang="he">
+                                    {smp.verseVocalized}
+                                  </p>
+                                  {smp.translationPt && (
+                                    <div className="flex items-start justify-between gap-2">
+                                      <p className="flex-1 text-xs text-[#4a3d2d]">{smp.translationPt}</p>
+                                      <AudioPlayButton
+                                        audioId={`mas-smp-pt-${f.vocalizedForm}-${sIdx}`}
+                                        text={smp.translationPt}
+                                        lang="pt-BR"
+                                        label="Ouvir PT"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {/* Inspetor combinatório de sinais massoréticos */}
+          <section className="qumran-glass gem-border rounded-xl p-5 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-[#1f1912]">
+                  Inspetor Combinatório de Sinais Massoréticos (Niqqud, Dagesh, Maqaf, Te’amim)
+                </h3>
+                <p className="text-xs text-[#5c4d3c]">
+                  Combine múltiplos sinais massoréticos na mesma palavra ou no mesmo versículo com 4 camadas preservadas.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => executeMasoreticLab(1)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md cursor-pointer disabled:opacity-50"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
+                {loading ? 'Filtrando…' : 'Buscar sinais selecionados'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <div className="md:col-span-4">
+                <label className="block text-xs text-[#5c4d3c] mb-1">Livro / Escopo</label>
+                <select
+                  value={masBookSlug}
+                  onChange={(e) => setMasBookSlug(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border rounded"
+                >
+                  <option value="all">Todo o Tanakh (39 livros)</option>
+                  {books.map((b) => (
+                    <option key={b.slug} value={b.slug}>
+                      {b.ptTitle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-4">
+                <label className="block text-xs text-[#5c4d3c] mb-1">Filtro consonantal opcional</label>
+                <input
+                  type="text"
+                  dir="rtl"
+                  lang="he"
+                  value={masConsFilter}
+                  onChange={(e) => setMasConsFilter(e.target.value)}
+                  placeholder="Ex.: יהוה ou בראשית"
+                  className="w-full px-3 py-1.5 text-base font-hebrew border rounded"
+                />
+              </div>
+              <div className="md:col-span-4">
+                <label className="block text-xs text-[#5c4d3c] mb-1">Granularidade da combinação</label>
+                <select
+                  value={masMatchMode}
+                  onChange={(e) => setMasMatchMode(e.target.value as 'word_all' | 'verse_all')}
+                  className="w-full px-3 py-2 text-xs border rounded"
+                >
+                  <option value="word_all">Todos os sinais na mesma palavra</option>
+                  <option value="verse_all">Todos os sinais no mesmo versículo</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              {masData.availableSigns.map((sig) => {
+                const checked = masSelectedSigns.includes(sig.id);
+                return (
+                  <button
+                    key={sig.id}
+                    type="button"
+                    onClick={() => toggleMasSign(sig.id)}
+                    title={sig.description}
+                    className={`p-2.5 text-left rounded border text-xs transition-colors cursor-pointer ${
+                      checked
+                        ? 'bg-[#0e4d64] text-[#fefaf0] border-[#fbbf24]/55'
+                        : 'qumran-glass-inset text-[#4a3d2d] hover:border-[#0e4d64]/45'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1">
+                      <span className="font-semibold truncate">{sig.label}</span>
+                      <span className="font-hebrew text-base" dir="rtl" lang="he">{sig.hebrewExample}</span>
+                    </div>
+                    <div className={`font-mono text-[11px] tabular-nums mt-0.5 ${checked ? 'text-[#fef3c7]' : 'text-[#6d5b45]'}`}>
+                      {sig.versesWithSign.toLocaleString('pt-BR')} versículos
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-3 pt-2 border-t qumran-divider">
+              <div className="flex items-center justify-between text-xs text-[#4a3d2d]">
+                <span>
+                  <strong className="font-mono text-base text-[#0b3948]">
+                    {masData.signSearch.totalMatchedVerses.toLocaleString('pt-BR')}
+                  </strong>{' '}
+                  versículos correspondentes aos sinais selecionados
+                </span>
+                {masData.signSearch.totalMatchedVerses > masData.signSearch.pageSize && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={masPage <= 1 || loading}
+                      onClick={() => executeMasoreticLab(masPage - 1)}
+                      className="px-2.5 py-1 border rounded qumran-glass-inset disabled:opacity-40 cursor-pointer"
+                    >
+                      Anterior
+                    </button>
+                    <span className="font-mono tabular-nums">Pág. {masPage}</span>
+                    <button
+                      type="button"
+                      disabled={masPage * masData.signSearch.pageSize >= masData.signSearch.totalMatchedVerses || loading}
+                      onClick={() => executeMasoreticLab(masPage + 1)}
+                      className="px-2.5 py-1 border rounded qumran-glass-inset disabled:opacity-40 cursor-pointer"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="divide-y qumran-divider qumran-glass-inset rounded-lg">
+                {masData.signSearch.items.map((item, idx) => (
+                  <div key={`${item.slug}-${item.chapter}-${item.verse}-${idx}`} className="p-3.5 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => onInspectChapter(item.slug, item.chapter)}
+                        className="font-bold text-[#0e4d64] hover:underline cursor-pointer"
+                      >
+                        {item.reference}
+                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[#5c4d3c]">Tokens:</span>
+                        <span className="font-hebrew text-base text-[#9a5410] font-bold" dir="rtl" lang="he">
+                          {item.matchedTokens.join(' · ')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="flex-1 font-hebrew text-xl text-[#1f1912]" dir="rtl" lang="he">
+                        {item.verseOriginal}
+                      </p>
+                      <AudioPlayButton
+                        audioId={`mas-hit-he-${item.slug}-${item.chapter}-${item.verse}`}
+                        text={item.verseVocalized}
+                        lang="he-IL"
+                        label="Ouvir"
+                      />
+                    </div>
+                    <div className="text-[11px] font-hebrew text-[#5c4d3c]" dir="rtl" lang="he">
+                      Stream: {item.verseStream}
+                    </div>
+                    {item.translationPt && (
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="flex-1 text-xs text-[#4a3d2d]">{item.translationPt}</p>
+                        <AudioPlayButton
+                          audioId={`mas-hit-pt-${item.slug}-${item.chapter}-${item.verse}`}
+                          text={item.translationPt}
+                          lang="pt-BR"
+                          label="Ouvir"
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
       )}
 

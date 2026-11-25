@@ -204,19 +204,31 @@ def download_book(entry: dict, acf_by_name: dict) -> dict:
     with open(out_path, "wb") as f:
         f.write(raw)
 
-    # Alinhar traducao PT-BR (ACF) ao texto massoretico hebraico
+    # Alinhar traducao PT-BR (ACF) no formato modular data/translations/acf/<slug>.json
+    acf_dir = os.path.join(TRANSLATIONS_DIR, "acf")
+    os.makedirs(acf_dir, exist_ok=True)
     aligned_pt = align_pt_br_to_masoretic(title, parsed["text"], acf_by_name[acf_name])
+    canon_group = {"Torah": "torah", "Prophets": "prophets", "Writings": "writings"}.get(division, "writings")
     pt_doc = {
-        "title": title,
-        "ptTitle": pt_title,
+        "schemaVersion": "1.0.0",
+        "translationId": "acf",
+        "bookId": slug,
+        "title": pt_title,
+        "nativeTitle": pt_title,
+        "canonGroup": canon_group,
         "language": "pt-BR",
         "versionTitle": ACF_VERSION_TITLE,
         "versionSource": ACF_PT_BR_URL,
-        "versification": "Masoretic Hebrew Tanakh (aligned)",
+        "versification": {
+            "system": "masoretic",
+            "mappedToMasoretic": True,
+            "validated": True,
+            "sourceNumberingPreserved": False,
+        },
         "text": aligned_pt,
     }
     pt_bytes = json.dumps(pt_doc, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
-    pt_path = os.path.join(TRANSLATIONS_DIR, f"{slug}.pt.json")
+    pt_path = os.path.join(acf_dir, f"{slug}.json")
     with open(pt_path, "wb") as f:
         f.write(pt_bytes)
 
@@ -240,20 +252,21 @@ def download_book(entry: dict, acf_by_name: dict) -> dict:
             "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
             "url": ACF_PT_BR_URL,
             "sha256": sha256_hex(pt_bytes),
-            "file": f"data/translations/{slug}.pt.json",
+            "file": f"data/translations/acf/{slug}.json",
         },
     }
 
 
 def main() -> int:
     os.makedirs(ORIGINAL_DIR, exist_ok=True)
-    os.makedirs(TRANSLATIONS_DIR, exist_ok=True)
+    os.makedirs(os.path.join(TRANSLATIONS_DIR, "acf"), exist_ok=True)
 
-    # Remover quaisquer arquivos de traducao em ingles anteriores (.en.json)
+    # Limpar apenas eventuais arquivos legados soltos em ingles sem jamais remover outras pastas de traducoes
     removed_en = 0
     for fname in os.listdir(TRANSLATIONS_DIR):
-        if fname.endswith(".en.json"):
-            os.remove(os.path.join(TRANSLATIONS_DIR, fname))
+        full = os.path.join(TRANSLATIONS_DIR, fname)
+        if os.path.isfile(full) and fname.endswith(".en.json"):
+            os.remove(full)
             removed_en += 1
     if removed_en:
         print(f"0. Removidos {removed_en} arquivos de traducao em ingles (.en.json).")

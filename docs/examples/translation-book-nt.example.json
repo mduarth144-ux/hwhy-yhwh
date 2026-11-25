@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "translationId": "exemplo_pt",
+  "bookId": "matthew",
+  "title": "Evangelho segundo Mateus",
+  "canonGroup": "new_testament",
+  "language": "pt-BR",
+  "versification": {
+    "system": "christian_standard",
+    "mappedToMasoretic": false,
+    "validated": true,
+    "sourceNumberingPreserved": true,
+    "notes": "Livro do Novo Testamento disponível para leitura e comparação, sem original hebraico massorético indexado."
+  },
+  "text": [
+    [
+      "Livro da geração de Jesus Cristo, filho de Davi, filho de Abraão.",
+      "E Abraão gerou a Isaque; e Isaque gerou a Jacó; e Jacó gerou a Judá e a seus irmãos;"
+    ]
+  ]
+}

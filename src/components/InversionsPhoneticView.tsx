@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AudioWaveform, Shuffle } from 'lucide-react';
-import type { OccurrenceItem } from '../types';
+import { AlertCircle, AudioWaveform, Shuffle } from 'lucide-react';
+import type { ManifestBook, OccurrenceItem } from '../types';
+import { fetchJson } from '../utils/api';
 import { AudioPlayButton } from './AudioPlayButton';
 import { HebrewKeyboard } from './HebrewKeyboard';
 import { OccurrenceList } from './OccurrenceList';
@@ -42,6 +43,7 @@ interface InversionResponse {
 interface PhoneticRule {
   id: string;
   pair: [string, string];
+  arity?: '1:1' | '1:N' | 'N:1';
   label: string;
   category: string;
   cost: number;
@@ -49,6 +51,7 @@ interface PhoneticRule {
 
 interface PhoneticResponse {
   query: string;
+  mode: 'lexicon' | 'continuous' | 'both';
   availableRules: PhoneticRule[];
   totalLexiconCandidates: number;
   matches: Array<{
@@ -59,23 +62,33 @@ interface PhoneticResponse {
     lexiconCount: number;
     booksCount: number;
     language: string;
+    matchType?: 'exact_consonantal' | 'phonetic_approximation';
     evidenceTier: string;
     sampleOccurrences: OccurrenceItem[];
   }>;
+  continuousTotalCandidates?: number;
+  continuousExactCount?: number;
+  continuousApproximateCount?: number;
+  continuousMatches?: OccurrenceItem[];
   disclaimer: string;
   algorithmVersion: string;
 }
 
 const DEFAULT_RULES: PhoneticRule[] = [
-  { id: 'ayin_alef', pair: ['ע', 'א'], label: 'ע ↔ א (guturais)', category: 'Guturais', cost: 0.4 },
-  { id: 'het_he', pair: ['ח', 'ה'], label: 'ח ↔ ה (guturais)', category: 'Guturais', cost: 0.45 },
-  { id: 'kaf_het', pair: ['כ', 'ח'], label: 'כ ↔ ח (fricativa/gutural)', category: 'Velares/Guturais', cost: 0.5 },
-  { id: 'qof_kaf', pair: ['ק', 'כ'], label: 'ק ↔ כ (enfática/velar)', category: 'Velares', cost: 0.35 },
-  { id: 'tav_tet', pair: ['ת', 'ט'], label: 'ת ↔ ט (dental/enfática)', category: 'Dentais', cost: 0.35 },
-  { id: 'shin_samekh', pair: ['ש', 'ס'], label: 'ש ↔ ס (sibilantes)', category: 'Sibilantes', cost: 0.35 },
-  { id: 'resh_dalet', pair: ['ר', 'ד'], label: 'ר ↔ ד (proximidade)', category: 'Coronais', cost: 0.6 },
-  { id: 'vav_yod', pair: ['ו', 'י'], label: 'ו ↔ י (semivogais)', category: 'Semivogais', cost: 0.4 },
-  { id: 'alef_yod', pair: ['א', 'י'], label: 'א ↔ י (glotal/palatal)', category: 'Semivogais', cost: 0.5 },
+  { id: 'ayin_alef', pair: ['ע', 'א'], arity: '1:1', label: 'ע ↔ א (guturais)', category: 'Guturais', cost: 0.4 },
+  { id: 'het_he', pair: ['ח', 'ה'], arity: '1:1', label: 'ח ↔ ה (guturais)', category: 'Guturais', cost: 0.45 },
+  { id: 'kaf_het', pair: ['כ', 'ח'], arity: '1:1', label: 'כ ↔ ח (fricativa/gutural)', category: 'Velares/Guturais', cost: 0.5 },
+  { id: 'qof_kaf', pair: ['ק', 'כ'], arity: '1:1', label: 'ק ↔ כ (enfática/velar)', category: 'Velares', cost: 0.35 },
+  { id: 'tav_tet', pair: ['ת', 'ט'], arity: '1:1', label: 'ת ↔ ט (dental/enfática)', category: 'Dentais', cost: 0.35 },
+  { id: 'shin_samekh', pair: ['ש', 'ס'], arity: '1:1', label: 'ש ↔ ס (sibilantes)', category: 'Sibilantes', cost: 0.35 },
+  { id: 'resh_dalet', pair: ['ר', 'ד'], arity: '1:1', label: 'ר ↔ ד (proximidade gráfica/fonética)', category: 'Coronais', cost: 0.6 },
+  { id: 'vav_yod', pair: ['ו', 'י'], arity: '1:1', label: 'ו ↔ י (semivogais)', category: 'Semivogais', cost: 0.4 },
+  { id: 'alef_yod', pair: ['א', 'י'], arity: '1:1', label: 'א ↔ י (glotal/palatal)', category: 'Semivogais', cost: 0.5 },
+  { id: 'alef_he_mater', pair: ['א', 'ה'], arity: '1:1', label: 'א ↔ ה (mater final/gutural)', category: 'Guturais', cost: 0.4 },
+  { id: 'vav_double', pair: ['ו', 'וו'], arity: '1:N', label: 'ו ↔ וו (simples/dupla)', category: '1:N / N:1', cost: 0.25 },
+  { id: 'yod_double', pair: ['י', 'יי'], arity: '1:N', label: 'י ↔ יי (simples/dupla)', category: '1:N / N:1', cost: 0.25 },
+  { id: 'mater_vav_elision', pair: ['ו', ''], arity: '1:N', label: 'ו ↔ ∅ (plene/defectiva)', category: '1:N / N:1', cost: 0.45 },
+  { id: 'mater_yod_elision', pair: ['י', ''], arity: '1:N', label: 'י ↔ ∅ (plene/defectiva)', category: '1:N / N:1', cost: 0.45 },
 ];
 
 const CLASS_LABEL: Record<string, string> = {
@@ -87,6 +100,8 @@ const CLASS_LABEL: Record<string, string> = {
 
 interface InversionsPhoneticViewProps {
   mode: 'inversions' | 'phonetic';
+  books?: ManifestBook[];
+  preferredTranslationId?: string;
   onSaveToNotebook: (item: {
     title: string;
     reference: string;
@@ -99,6 +114,8 @@ interface InversionsPhoneticViewProps {
 
 export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
   mode,
+  books = [],
+  preferredTranslationId,
   onSaveToNotebook,
   onInspectChapter,
 }) => {
@@ -108,16 +125,27 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
   const [includeStreamSubstrings, setIncludeStreamSubstrings] = useState(false);
   const [invData, setInvData] = useState<InversionResponse | null>(null);
 
-  const [activeRules, setActiveRules] = useState<string[]>(['ayin_alef', 'shin_samekh', 'qof_kaf', 'resh_dalet']);
+  const [phonMode, setPhonMode] = useState<'lexicon' | 'continuous' | 'both'>('both');
+  const [phonScopeDivision, setPhonScopeDivision] = useState('all');
+  const [phonScopeBook, setPhonScopeBook] = useState('all');
+  const [activeRules, setActiveRules] = useState<string[]>([
+    'ayin_alef',
+    'shin_samekh',
+    'qof_kaf',
+    'resh_dalet',
+    'vav_double',
+  ]);
   const [maxCost, setMaxCost] = useState(0.8);
   const [phonData, setPhonData] = useState<PhoneticResponse | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const runInversions = async (targetTerm = term) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/search/inversions', {
+      const json = await fetchJson<InversionResponse>('/api/search/inversions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,9 +153,12 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
           normalizeFinals,
           includePermutations,
           includeStreamSubstrings,
+          translationId: preferredTranslationId,
         }),
       });
-      setInvData((await res.json()) as InversionResponse);
+      setInvData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao analisar inversões.');
     } finally {
       setLoading(false);
     }
@@ -135,8 +166,9 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
 
   const runPhonetic = async (targetTerm = term) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/search/phonetic', {
+      const json = await fetchJson<PhoneticResponse>('/api/search/phonetic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,9 +176,15 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
           activeRuleIds: activeRules,
           maxCost,
           limit: 40,
+          mode: phonMode,
+          division: phonScopeDivision,
+          bookSlug: phonScopeBook,
+          translationId: preferredTranslationId,
         }),
       });
-      setPhonData((await res.json()) as PhoneticResponse);
+      setPhonData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao executar busca fonética.');
     } finally {
       setLoading(false);
     }
@@ -166,11 +204,11 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="qumran-glass gem-border rounded-xl p-5 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-          <div className="md:col-span-5">
+          <div className={mode === 'phonetic' ? 'md:col-span-4' : 'md:col-span-5'}>
             <label className="block text-xs text-[#5c4d3c] mb-1">
               {mode === 'inversions'
                 ? 'Palavra / raiz hebraica para inversão e permutação'
-                : 'Termo de referência para comparação fonética experimental'}
+                : 'Termo ou sequência para comparação fonética experimental'}
             </label>
             <input
               type="text"
@@ -213,20 +251,61 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
               </label>
             </div>
           ) : (
-            <div className="md:col-span-5">
-              <label className="block text-xs text-[#5c4d3c] mb-1">
-                Custo máximo de transformação fonética ({maxCost.toFixed(2)})
-              </label>
-              <input
-                type="range"
-                min={0.3}
-                max={1.8}
-                step={0.05}
-                value={maxCost}
-                onChange={(e) => setMaxCost(Number(e.target.value))}
-                className="w-full accent-[#0e4d64]"
-              />
-            </div>
+            <>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-[#5c4d3c] mb-1">Modo de busca</label>
+                <select
+                  value={phonMode}
+                  onChange={(e) => setPhonMode(e.target.value as 'lexicon' | 'continuous' | 'both')}
+                  className="w-full px-2.5 py-2 text-xs border rounded"
+                >
+                  <option value="both">Léxico + Stream contínuo</option>
+                  <option value="lexicon">Somente Léxico</option>
+                  <option value="continuous">Somente Stream contínuo</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-[#5c4d3c] mb-1">Escopo (Stream)</label>
+                <select
+                  value={phonScopeBook !== 'all' ? `book:${phonScopeBook}` : `div:${phonScopeDivision}`}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v.startsWith('book:')) {
+                      setPhonScopeBook(v.slice(5));
+                      setPhonScopeDivision('all');
+                    } else {
+                      setPhonScopeDivision(v.slice(4));
+                      setPhonScopeBook('all');
+                    }
+                  }}
+                  className="w-full px-2.5 py-2 text-xs border rounded"
+                >
+                  <option value="div:all">Todo o Tanakh</option>
+                  <option value="div:Torah">Torá</option>
+                  <option value="div:Prophets">Nevi’im</option>
+                  <option value="div:Writings">Ketuvim</option>
+                  {books.map((b) => (
+                    <option key={b.slug} value={`book:${b.slug}`}>
+                      {b.ptTitle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-[#5c4d3c] mb-1">
+                  Custo máx. ({maxCost.toFixed(2)})
+                </label>
+                <input
+                  type="range"
+                  min={0.25}
+                  max={1.8}
+                  step={0.05}
+                  value={maxCost}
+                  onChange={(e) => setMaxCost(Number(e.target.value))}
+                  className="w-full accent-[#0e4d64]"
+                />
+              </div>
+            </>
           )}
 
           <div className="md:col-span-2">
@@ -240,10 +319,18 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
             </button>
           </div>
         </div>
+        {error && (
+          <div role="alert" className="flex items-center gap-2 px-3 py-2 text-xs text-rose-900 bg-rose-100/85 border border-rose-300 rounded-lg">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {mode === 'phonetic' && (
           <div className="pt-2 border-t qumran-divider space-y-2">
-            <div className="text-xs text-[#5c4d3c]">Regras fonéticas experimentais independentes:</div>
+            <div className="text-xs text-[#5c4d3c]">
+              Regras fonéticas experimentais independentes (incluindo transformações 1:N / N:1):
+            </div>
             <div className="flex flex-wrap gap-2">
               {DEFAULT_RULES.map((r) => {
                 const active = activeRules.includes(r.id);
@@ -272,9 +359,9 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
             { label: 'פשר / רשף', value: 'פשר' },
             { label: 'רז / זר', value: 'רז' },
             { label: 'פלא / אלף', value: 'פלא' },
-            { label: 'לבב / בבל', value: 'לבב' },
+            { label: 'אניהוא', value: 'אניהוא' },
+            { label: 'דוד / דויד', value: 'דויד' },
             { label: 'בינה / הניב', value: 'בינה' },
-            { label: 'דעת / תעד', value: 'דעת' },
           ]}
           onSelectPreset={(val) => {
             setTerm(val);
@@ -403,95 +490,137 @@ export const InversionsPhoneticView: React.FC<InversionsPhoneticViewProps> = ({
       )}
 
       {mode === 'phonetic' && phonData && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="bg-[#f59e0b]/15 border border-[#b45309]/35 rounded-xl p-4 text-xs text-[#78350f] flex flex-wrap items-center justify-between gap-2">
             <span>{phonData.disclaimer}</span>
             <span className="font-mono tabular-nums">
-              {phonData.totalLexiconCandidates} candidatos no léxico ({phonData.algorithmVersion})
+              {phonData.totalLexiconCandidates} no léxico · {phonData.continuousTotalCandidates ?? 0} no stream contínuo ({phonData.algorithmVersion})
             </span>
           </div>
 
-          <div className="divide-y qumran-divider qumran-glass gem-border rounded-xl">
-            {phonData.matches.map((m) => (
-              <div key={m.word} className="p-4 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="font-hebrew text-2xl font-bold gem-hebrew" dir="rtl" lang="he">
-                      {m.word}
-                    </span>
-                    <AudioPlayButton
-                      audioId={`phon-word-${m.word}`}
-                      text={m.word}
-                      lang="he-IL"
-                    />
-                    <span className="text-xs text-[#9a5410] font-semibold">
-                      {m.cost === 0 ? 'Forma exata (custo 0)' : 'Hipótese fonética experimental'}
-                    </span>
-                    <span className="text-xs font-mono tabular-nums text-[#4a3d2d]">
-                      Custo: {m.cost} · Distância Levenshtein: {m.editDistance} · {m.lexiconCount}× em {m.booksCount} livros · {m.language}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onSaveToNotebook({
-                        title: `Hipótese fonética: ${phonData.query} → ${m.word}`,
-                        reference: m.sampleOccurrences[0]?.reference ?? 'Léxico Tanakh',
-                        hebrew_snippet: m.sampleOccurrences[0]?.verseVocalized ?? m.word,
-                        evidence_tier: 'hipotese_fonetica',
-                        parameters_json: JSON.stringify({ cost: m.cost, transformations: m.transformations }),
-                      })
-                    }
-                    className="px-2.5 py-1 text-xs font-medium text-[#0e4d64] border border-[#0e4d64]/30 rounded hover:bg-[#0e4d64]/10 cursor-pointer"
-                  >
-                    Registrar hipótese
-                  </button>
-                </div>
-
-                {m.transformations.length > 0 && (
-                  <div className="text-xs font-mono text-[#4a3d2d]">
-                    Transformações aplicadas: {m.transformations.join(' | ')}
-                  </div>
-                )}
-
-                {m.sampleOccurrences[0] && (
-                  <div className="qumran-glass-inset p-3 rounded-lg text-xs space-y-2">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onInspectChapter(m.sampleOccurrences[0].slug, m.sampleOccurrences[0].chapter)}
-                        className="text-[#0e4d64] font-semibold hover:text-[#9a5410] hover:underline text-left shrink-0 cursor-pointer"
-                      >
-                        {m.sampleOccurrences[0].reference}
-                      </button>
-                      <div className="flex items-start justify-end gap-2">
-                        <span className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">
-                          {m.sampleOccurrences[0].verseVocalized}
+          {(phonData.mode === 'lexicon' || phonData.mode === 'both') && phonData.matches.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-[#1f1912]">
+                Candidatos no Léxico de Palavras Isoladas ({phonData.totalLexiconCandidates})
+              </h3>
+              <div className="divide-y qumran-divider qumran-glass gem-border rounded-xl">
+                {phonData.matches.map((m) => (
+                  <div key={m.word} className="p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="font-hebrew text-2xl font-bold gem-hebrew" dir="rtl" lang="he">
+                          {m.word}
                         </span>
                         <AudioPlayButton
-                          audioId={`phon-he-${m.word}`}
-                          text={m.sampleOccurrences[0].verseVocalized}
+                          audioId={`phon-word-${m.word}`}
+                          text={m.word}
                           lang="he-IL"
-                          label="Ouvir"
                         />
+                        <span
+                          className={`text-xs font-semibold ${
+                            m.cost === 0 ? 'text-[#047857]' : 'text-[#9a5410]'
+                          }`}
+                        >
+                          {m.cost === 0 ? 'Forma consonantal exata (custo 0)' : 'Hipótese fonética experimental'}
+                        </span>
+                        <span className="text-xs font-mono tabular-nums text-[#4a3d2d]">
+                          Custo: {m.cost} · Levenshtein: {m.editDistance} · {m.lexiconCount}× em {m.booksCount} livros · {m.language}
+                        </span>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onSaveToNotebook({
+                            title: `Hipótese fonética: ${phonData.query} → ${m.word}`,
+                            reference: m.sampleOccurrences[0]?.reference ?? 'Léxico Tanakh',
+                            hebrew_snippet: m.sampleOccurrences[0]?.verseVocalized ?? m.word,
+                            evidence_tier: m.cost === 0 ? 'evidencia_textual' : 'hipotese_fonetica',
+                            parameters_json: JSON.stringify({ cost: m.cost, transformations: m.transformations }),
+                          })
+                        }
+                        className="px-2.5 py-1 text-xs font-medium text-[#0e4d64] border border-[#0e4d64]/30 rounded hover:bg-[#0e4d64]/10 cursor-pointer"
+                      >
+                        Registrar hipótese
+                      </button>
                     </div>
-                    {m.sampleOccurrences[0].translationPt && (
-                      <div className="flex items-start justify-between gap-2 pt-1 border-t qumran-divider">
-                        <span className="flex-1 text-[#4a3d2d]">{m.sampleOccurrences[0].translationPt}</span>
-                        <AudioPlayButton
-                          audioId={`phon-pt-${m.word}`}
-                          text={m.sampleOccurrences[0].translationPt}
-                          lang="pt-BR"
-                          label="Ouvir"
-                        />
+
+                    {m.transformations.length > 0 && (
+                      <div className="text-xs font-mono text-[#4a3d2d]">
+                        Transformações aplicadas: {m.transformations.join(' | ')}
+                      </div>
+                    )}
+
+                    {m.sampleOccurrences[0] && (
+                      <div className="qumran-glass-inset p-3 rounded-lg text-xs space-y-2">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onInspectChapter(m.sampleOccurrences[0].slug, m.sampleOccurrences[0].chapter)}
+                            className="text-[#0e4d64] font-semibold hover:text-[#9a5410] hover:underline text-left shrink-0 cursor-pointer"
+                          >
+                            {m.sampleOccurrences[0].reference}
+                          </button>
+                          <div className="flex items-start justify-end gap-2">
+                            <span className="font-hebrew text-base text-[#1f1912]" dir="rtl" lang="he">
+                              {m.sampleOccurrences[0].verseVocalized}
+                            </span>
+                            <AudioPlayButton
+                              audioId={`phon-he-${m.word}`}
+                              text={m.sampleOccurrences[0].verseVocalized}
+                              lang="he-IL"
+                              label="Ouvir"
+                            />
+                          </div>
+                        </div>
+                        {m.sampleOccurrences[0].translationPt && (
+                          <div className="flex items-start justify-between gap-2 pt-1 border-t qumran-divider">
+                            <span className="flex-1 text-[#4a3d2d]">{m.sampleOccurrences[0].translationPt}</span>
+                            <AudioPlayButton
+                              audioId={`phon-pt-${m.word}`}
+                              text={m.sampleOccurrences[0].translationPt}
+                              lang={m.sampleOccurrences[0].translationLanguage || 'pt-BR'}
+                              label="Ouvir"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
+
+          {(phonData.mode === 'continuous' || phonData.mode === 'both') && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-[#1f1912]">
+                  Correspondências no Fluxo Contínuo Sem Espaços (cruzando fronteiras de palavras)
+                </h3>
+                <div className="text-xs font-mono tabular-nums text-[#4a3d2d]">
+                  <span className="text-[#047857] font-semibold">
+                    Exatas no stream: {phonData.continuousExactCount ?? 0}
+                  </span>
+                  <span className="mx-2">·</span>
+                  <span className="text-[#9a5410] font-semibold">
+                    Aproximações fonéticas: {phonData.continuousApproximateCount ?? 0}
+                  </span>
+                </div>
+              </div>
+
+              {phonData.continuousMatches && phonData.continuousMatches.length > 0 ? (
+                <OccurrenceList
+                  items={phonData.continuousMatches}
+                  onSaveToNotebook={onSaveToNotebook}
+                  onInspectChapter={onInspectChapter}
+                />
+              ) : (
+                <div className="qumran-glass gem-border rounded-xl p-4 text-xs text-[#5c4d3c]">
+                  Nenhuma ocorrência encontrada no stream contínuo dentro do custo máximo configurado.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -6,3 +6,14 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Banco local de pesquisa/anotações
+data/yawe_metadata.db*
+
+# Traduções locais de distribuição restrita instaladas pelo yawe-bible-importer
+# (Manter data/translations/acf/ e docs/schemas|examples rastreados no Git)
+data/translations/tnm*/
+data/translations/nwt*/
+data/translations/matos-soares*/
+data/translations/*restricted*/
+data/translations/*.local.json

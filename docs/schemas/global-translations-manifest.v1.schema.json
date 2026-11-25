@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawe.local/schemas/global-translations-manifest.v1.schema.json",
+  "title": "YA-WE Global Translations Manifest v1",
+  "description": "Catálogo índice global em data/translations/manifest.json listando traduções instaladas localmente.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generatedAtUtc",
+    "defaultTranslationId",
+    "translations"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "generatedAtUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "defaultTranslationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,47}$"
+    },
+    "autoDiscovery": {
+      "type": "boolean",
+      "default": true
+    },
+    "translations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "sigla",
+          "language",
+          "canon",
+          "manifestPath",
+          "restrictedDistribution"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,47}$"
+          },
+          "name": { "type": "string", "minLength": 1 },
+          "sigla": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "language": { "type": "string", "minLength": 2 },
+          "canon": {
+            "type": "string",
+            "enum": ["tanakh", "protestant_66", "catholic_73", "lxx", "custom"]
+          },
+          "manifestPath": { "type": "string", "minLength": 1 },
+          "restrictedDistribution": { "type": "boolean" },
+          "validationStatus": {
+            "type": "string",
+            "enum": ["validated", "partial", "unvalidated", "draft"]
+          }
+        }
+      }
+    }
+  }
+}

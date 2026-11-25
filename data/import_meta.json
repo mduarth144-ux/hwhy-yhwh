@@ -29,8 +29,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "24051c443bf4a6ef1656ec5a01272b9abd7baae7c2b32587643348065a19812f",
-        "file": "data/translations/genesis.pt.json"
+        "sha256": "f4f5a238d5474bbcccf550d75c7632e51345607d09d8cc6629b4f2c46b3bdb99",
+        "file": "data/translations/acf/genesis.json"
       }
     },
     {
@@ -52,8 +52,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "739ae2ef98be30ec5923f22894e9784c36394c697a6cfaa93a33dca9a555fb0b",
-        "file": "data/translations/exodus.pt.json"
+        "sha256": "fe051ed995efb082aa7c44dca5b49cc7a29d1cd7cc7a556f3a02b082077d2773",
+        "file": "data/translations/acf/exodus.json"
       }
     },
     {
@@ -75,8 +75,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "022b5c631b28b47cb6a23ffaeaa1d911a2040c99bc1fa23662490c607271c5b1",
-        "file": "data/translations/leviticus.pt.json"
+        "sha256": "4c78271d529a0de9cabccc61cf57d9b9baf82823c179ba397ff48426dbe30810",
+        "file": "data/translations/acf/leviticus.json"
       }
     },
     {
@@ -98,8 +98,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "704f63649d6372c0cfec84102d6856cd109dd20c9c59123dfb5c80b8e3d70f65",
-        "file": "data/translations/numbers.pt.json"
+        "sha256": "8ce71927a5fac68c0a6e363d8c62d1c33e391bf14a326abc482a3b8df808d226",
+        "file": "data/translations/acf/numbers.json"
       }
     },
     {
@@ -121,8 +121,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "cf36f25d947870481b36b794e184c92b85b3bf6db2e727ff00c50c41092a7099",
-        "file": "data/translations/deuteronomy.pt.json"
+        "sha256": "e1e4a6584727102ad413311a8c247b4f626f20c1627d0b6ea9d1b2192f7dae99",
+        "file": "data/translations/acf/deuteronomy.json"
       }
     },
     {
@@ -144,8 +144,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "4cf507b3ca99aacea0a214aaa0612c7d8c1fe2cb3aedcb7d93f252072e71860c",
-        "file": "data/translations/joshua.pt.json"
+        "sha256": "ff244010a9024b67c932dec5763e4fffcbfd4b4be4933b5a2f58366052d817fc",
+        "file": "data/translations/acf/joshua.json"
       }
     },
     {
@@ -167,8 +167,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "86935eb07307b8170e42eebcf817f1245fe1cb55ae60639255b9d905f8dbbbcd",
-        "file": "data/translations/judges.pt.json"
+        "sha256": "b87293b4b6dd2b920f6ea9ee1feae0c9b0ecea3b215fbd884509e849ef5ef764",
+        "file": "data/translations/acf/judges.json"
       }
     },
     {
@@ -190,8 +190,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "c501bf7a76a0d38e8f3073d63f36e83916ffbc54e906946baf471ed08befee0c",
-        "file": "data/translations/i_samuel.pt.json"
+        "sha256": "13653dd643937fc45775ca83c58db19462a443c09e73125d92fede4a99039968",
+        "file": "data/translations/acf/i_samuel.json"
       }
     },
     {
@@ -213,8 +213,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "e1d67cedfb1f39c2cc80a6e7b0f0d8f175a55eca625db5210d57bb0f0179680b",
-        "file": "data/translations/ii_samuel.pt.json"
+        "sha256": "54978941dce9cde00c4fcc5cb463cf1d222660456c37bc0bffbe7a91b767f6e7",
+        "file": "data/translations/acf/ii_samuel.json"
       }
     },
     {
@@ -236,8 +236,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "01ab83b9bfd6f9c3973c9e995aacdb008fd3f1d076ef4fcb1efcf9ceb12f40af",
-        "file": "data/translations/i_kings.pt.json"
+        "sha256": "fda9bf631b26b842436a2a4ed94f846c17a8180cf83b6a22c27b2789a5136c80",
+        "file": "data/translations/acf/i_kings.json"
       }
     },
     {
@@ -259,8 +259,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "d3cb84d15b9c2e872883de2d312a3de16ff790c978bf080530cb2aa13e1b98a8",
-        "file": "data/translations/ii_kings.pt.json"
+        "sha256": "1101f41d75d60f01543f7400ae86f3fcdb388331ebc5cac84ca8c32046b6f942",
+        "file": "data/translations/acf/ii_kings.json"
       }
     },
     {
@@ -282,8 +282,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "26a639ff9b22d771fbdc6e85b19fd9bea74fd8e0a50254a44aab53beccb772e8",
-        "file": "data/translations/isaiah.pt.json"
+        "sha256": "f6696efd27fad5d20f1c2000625168160cb3c156813830d33c9d9a1e733e733e",
+        "file": "data/translations/acf/isaiah.json"
       }
     },
     {
@@ -305,8 +305,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "01c83ee7ac3fe4c61bdd11d6f8e68dacb27079aa0e193b77b050c31e92137c58",
-        "file": "data/translations/jeremiah.pt.json"
+        "sha256": "10c2119a90c9117281b3190383e97e59a35df032bea2eb7c3540124bea2a48b6",
+        "file": "data/translations/acf/jeremiah.json"
       }
     },
     {
@@ -328,8 +328,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "fd2a903598c818e12182668a41ba2aa9cdd2196bd058b58cda347d805198f740",
-        "file": "data/translations/ezekiel.pt.json"
+        "sha256": "51f20ea06b60e3142a921fbcde402047ddc9ecfc550129089f7b41cd965d0378",
+        "file": "data/translations/acf/ezekiel.json"
       }
     },
     {
@@ -351,8 +351,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "dc44711dac0a8728551e6207faef28400c760d2411394cda893d1b4ca1a49f45",
-        "file": "data/translations/hosea.pt.json"
+        "sha256": "8aa53d9e8c2e36be0d6db3b1a335f213887cee97df8ad14a596676c3ad23b577",
+        "file": "data/translations/acf/hosea.json"
       }
     },
     {
@@ -374,8 +374,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "ce3fa9a142bfbac26c90e9d98053d27ef48d2d9f047435766f8d4b214c000ed0",
-        "file": "data/translations/joel.pt.json"
+        "sha256": "4cac2e5d14fef073e3af2713fd27ce4b9d55c70cce2f7b19ad4fe366e36c45c0",
+        "file": "data/translations/acf/joel.json"
       }
     },
     {
@@ -397,8 +397,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "a971858b64fc8b302f6a71ac87500dc1b7a4b1654a378c26948da31805f13a38",
-        "file": "data/translations/amos.pt.json"
+        "sha256": "77f574cd755c2235a4649195cb06819b6dd1b5add1cc103edbf1411790dbc350",
+        "file": "data/translations/acf/amos.json"
       }
     },
     {
@@ -420,8 +420,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "f0c88156ed49e30646d54895c5b32f8d18b4e190320f8c9e2040348cefc93e34",
-        "file": "data/translations/obadiah.pt.json"
+        "sha256": "57b2e6f96d770b6a2c4b9f43a1318aa414d23ee83fb841181ee6b1fe128dd69b",
+        "file": "data/translations/acf/obadiah.json"
       }
     },
     {
@@ -443,8 +443,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "4147c3a2fe862d60d8afeb9af3b287b6831c638d2c24726bb28a4c34fa4ccf9d",
-        "file": "data/translations/jonah.pt.json"
+        "sha256": "db2cb2aaaf8fbd3af644b7e56b82525ee24aa256acc267149cfd8162a0e50591",
+        "file": "data/translations/acf/jonah.json"
       }
     },
     {
@@ -466,8 +466,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "f331a2b9bc97a249d291fc4ca48f84439f7da43f910004e34069599f33ba766d",
-        "file": "data/translations/micah.pt.json"
+        "sha256": "fa071f656a4d54d05e14a15dfec58c1cbbc00df92d3f82aa8416d874b0122e10",
+        "file": "data/translations/acf/micah.json"
       }
     },
     {
@@ -489,8 +489,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "73f4f7bd5ab63bf9b1043f5dbc2e4482fa03eb280e39d2333ef684f6b6713776",
-        "file": "data/translations/nahum.pt.json"
+        "sha256": "6d213136bc79f8f3e1a171c62d3be0fba81724b202b5089808f6ee69da7d091f",
+        "file": "data/translations/acf/nahum.json"
       }
     },
     {
@@ -512,8 +512,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "345dadb315e733c02dda7260a4498ab67c948cd1cb9a7d05685c84eb0fcb14ac",
-        "file": "data/translations/habakkuk.pt.json"
+        "sha256": "f8b2feebaf5617cef0a31f1a6d44d4771ebd98b75e74e9d9b106bdfe21a3512d",
+        "file": "data/translations/acf/habakkuk.json"
       }
     },
     {
@@ -535,8 +535,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "10e1e68fbc71279315bffe6c0497e582f342acb31d228608bfad372a4ed102b4",
-        "file": "data/translations/zephaniah.pt.json"
+        "sha256": "1a05ab20131030b15351e4f634496291345f549acb89d464c2b3d303b39805a4",
+        "file": "data/translations/acf/zephaniah.json"
       }
     },
     {
@@ -558,8 +558,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "fe4310d3102be54e42d87f441b9cac461167d98c6e8e8377b9b3c37d1b5eac6c",
-        "file": "data/translations/haggai.pt.json"
+        "sha256": "4d358c2ef1cc01ba9507336e5f0b8619a70dea5f98bfba555cce4cdb045f12e6",
+        "file": "data/translations/acf/haggai.json"
       }
     },
     {
@@ -581,8 +581,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "9cb1176928b92fcc6665cb43b919283325f72fdd7ac02ea8f62fb2653c3224a0",
-        "file": "data/translations/zechariah.pt.json"
+        "sha256": "b0cb9417170d7571bdeb64685264f5c0d0eee1b36e66fdf36c3541b01411028d",
+        "file": "data/translations/acf/zechariah.json"
       }
     },
     {
@@ -604,8 +604,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "061d520c226f6ef6d90e2427d46f5f510c83c2b769161005afcab5108a48ee56",
-        "file": "data/translations/malachi.pt.json"
+        "sha256": "1da2dbc6e52bfa6e1faf12fda85e089696d47ecf6b3b5d966d22fef614633ea2",
+        "file": "data/translations/acf/malachi.json"
       }
     },
     {
@@ -627,8 +627,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "bf53c12f64bd7e7e53946de9a4bd197a216b6f17a5b23fc367a2716b082ddb55",
-        "file": "data/translations/psalms.pt.json"
+        "sha256": "a5c82c4d8a5b624218d5b308cf46ae0385e047f3e4785ce4af61d9f3d7cc1fa3",
+        "file": "data/translations/acf/psalms.json"
       }
     },
     {
@@ -650,8 +650,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "693e7270fc8e9f528ee45384babccc6761fcbe12242316b022b8af8300b12c9c",
-        "file": "data/translations/proverbs.pt.json"
+        "sha256": "962630261cc068fedcf762567b23712c15212ceb348f242fb8f8848a843d4d40",
+        "file": "data/translations/acf/proverbs.json"
       }
     },
     {
@@ -673,8 +673,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "18f9e71c3ee5a186ff77ae586742ec17b008ab665406754b9cbe80a550eb17c4",
-        "file": "data/translations/job.pt.json"
+        "sha256": "2ea654b5f6f699bd68e8cce6ba20f168e6f005f920a4dbaeb3360a768d453cfb",
+        "file": "data/translations/acf/job.json"
       }
     },
     {
@@ -696,8 +696,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "bfa7bb0653038bd2940f1d15f530d94fcf505ce08be220722947d1301cad1451",
-        "file": "data/translations/song_of_songs.pt.json"
+        "sha256": "75c439da940bfe73de9180c5df4d4a2339a6ae1345517e292a2330d31e7bf6cb",
+        "file": "data/translations/acf/song_of_songs.json"
       }
     },
     {
@@ -719,8 +719,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "97d823f1631c919933272ae45ba3f33bda499917a32b7505bfc3b72aef1ed31b",
-        "file": "data/translations/ruth.pt.json"
+        "sha256": "ac5ae0fd2828d0bf925258e17d26942df3654f79797e429fcaa7d432aaad6cd3",
+        "file": "data/translations/acf/ruth.json"
       }
     },
     {
@@ -742,8 +742,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "71e683da50f08a8531f33f9c8a33d6507c7ed7634a44c2b6d32b960f28acf5c9",
-        "file": "data/translations/lamentations.pt.json"
+        "sha256": "2f614d33c50a550f0064c5a40d024e5b818d16e80083167e9e2a5eb77543f8b4",
+        "file": "data/translations/acf/lamentations.json"
       }
     },
     {
@@ -765,8 +765,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "a93a8e10bdd038cbc188a35dadc4863cf1a720e9dffaf7935e271130781b49af",
-        "file": "data/translations/ecclesiastes.pt.json"
+        "sha256": "09d31274c357188b5fc1b8c5f134218993b653c3bb997091171026bf338221f7",
+        "file": "data/translations/acf/ecclesiastes.json"
       }
     },
     {
@@ -788,8 +788,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "ecd3856f4bcf1fc6473f1e28dd649852aa15632ce2adb7842184763f282f5f85",
-        "file": "data/translations/esther.pt.json"
+        "sha256": "33a9fd078fcede11cc2f31412baab1903cd6e86d1acb2199ff030a22012b9410",
+        "file": "data/translations/acf/esther.json"
       }
     },
     {
@@ -811,8 +811,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "5e71feae4095997656a42a1fd46b5205fd40604af77cc4e85cbc14b8688b3958",
-        "file": "data/translations/daniel.pt.json"
+        "sha256": "f1e8ec2ad5de2a9e4c93cd6b18c35d8dbc89b7b3598e6b0845edcc85d20a32ee",
+        "file": "data/translations/acf/daniel.json"
       }
     },
     {
@@ -834,8 +834,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "fc2fd0a29a9c38ba918e811900c169081c32a77a4a0640347f7a1ec4f9e33af8",
-        "file": "data/translations/ezra.pt.json"
+        "sha256": "df71acb985cdfc213ef2bf65831b7010f5c35610bee2a6839fef76ce6df1c17b",
+        "file": "data/translations/acf/ezra.json"
       }
     },
     {
@@ -857,8 +857,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "376e4061aded1041832bb7b2809157fb3a4fb495a91988404ebaa785e0cc0014",
-        "file": "data/translations/nehemiah.pt.json"
+        "sha256": "b66d473e21e9be42a80b6ec5ac52e7ea0d13e81e78d6b1e3c392f697795e08e0",
+        "file": "data/translations/acf/nehemiah.json"
       }
     },
     {
@@ -880,8 +880,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "cd6a77e21bd015d98cb79dc6f0dc10679bf70892ef2e8f4c4d957c8525d1ea08",
-        "file": "data/translations/i_chronicles.pt.json"
+        "sha256": "91269881a5a994648730c2382c18cb7a90ed5a2efd7b1c7544f46fbe76bc6723",
+        "file": "data/translations/acf/i_chronicles.json"
       }
     },
     {
@@ -903,8 +903,8 @@
         "versionTitle": "Almeida Corrigida Fiel (ACF) — PT-BR",
         "license": "Domínio Público / Repositório aberto PT-BR (thiagobodruk/biblia)",
         "url": "https://raw.githubusercontent.com/thiagobodruk/biblia/master/json/acf.json",
-        "sha256": "05296657f030a4824f1234d6c7d484da7a428206d52fe3d9f2a949b904f31a6c",
-        "file": "data/translations/ii_chronicles.pt.json"
+        "sha256": "77a4ef603549eeb6720ee6c81af824e0fb01bfa671d6314b209a77c7196c68df",
+        "file": "data/translations/acf/ii_chronicles.json"
       }
     }
   ]

@@ -117,21 +117,27 @@ function countMultisetPermutations(chars: string[]): number {
 export interface PhoneticRule {
   id: string;
   pair: [string, string];
+  arity?: '1:1' | '1:N' | 'N:1';
   label: string;
   category: string;
   cost: number;
 }
 
 export const PHONETIC_RULES: PhoneticRule[] = [
-  { id: 'ayin_alef', pair: ['ע', 'א'], label: 'ע ↔ א (guturais)', category: 'Guturais', cost: 0.4 },
-  { id: 'het_he', pair: ['ח', 'ה'], label: 'ח ↔ ה (guturais)', category: 'Guturais', cost: 0.45 },
-  { id: 'kaf_het', pair: ['כ', 'ח'], label: 'כ ↔ ח (fricativa/gutural)', category: 'Velares/Guturais', cost: 0.5 },
-  { id: 'qof_kaf', pair: ['ק', 'כ'], label: 'ק ↔ כ (enfática/velar)', category: 'Velares', cost: 0.35 },
-  { id: 'tav_tet', pair: ['ת', 'ט'], label: 'ת ↔ ט (dental/enfática)', category: 'Dentais', cost: 0.35 },
-  { id: 'shin_samekh', pair: ['ש', 'ס'], label: 'ש ↔ ס (sibilantes)', category: 'Sibilantes', cost: 0.35 },
-  { id: 'resh_dalet', pair: ['ר', 'ד'], label: 'ר ↔ ד (proximidade gráfica/fonética)', category: 'Coronais', cost: 0.6 },
-  { id: 'vav_yod', pair: ['ו', 'י'], label: 'ו ↔ י (matres lectionis / semivogais)', category: 'Semivogais', cost: 0.4 },
-  { id: 'alef_yod', pair: ['א', 'י'], label: 'א ↔ י (glotal/palatal)', category: 'Semivogais', cost: 0.5 },
+  { id: 'ayin_alef', pair: ['ע', 'א'], arity: '1:1', label: 'ע ↔ א (guturais)', category: 'Guturais', cost: 0.4 },
+  { id: 'het_he', pair: ['ח', 'ה'], arity: '1:1', label: 'ח ↔ ה (guturais)', category: 'Guturais', cost: 0.45 },
+  { id: 'kaf_het', pair: ['כ', 'ח'], arity: '1:1', label: 'כ ↔ ח (fricativa/gutural)', category: 'Velares/Guturais', cost: 0.5 },
+  { id: 'qof_kaf', pair: ['ק', 'כ'], arity: '1:1', label: 'ק ↔ כ (enfática/velar)', category: 'Velares', cost: 0.35 },
+  { id: 'tav_tet', pair: ['ת', 'ט'], arity: '1:1', label: 'ת ↔ ט (dental/enfática)', category: 'Dentais', cost: 0.35 },
+  { id: 'shin_samekh', pair: ['ש', 'ס'], arity: '1:1', label: 'ש ↔ ס (sibilantes)', category: 'Sibilantes', cost: 0.35 },
+  { id: 'resh_dalet', pair: ['ר', 'ד'], arity: '1:1', label: 'ר ↔ ד (proximidade gráfica/fonética)', category: 'Coronais', cost: 0.6 },
+  { id: 'vav_yod', pair: ['ו', 'י'], arity: '1:1', label: 'ו ↔ י (matres lectionis / semivogais)', category: 'Semivogais', cost: 0.4 },
+  { id: 'alef_yod', pair: ['א', 'י'], arity: '1:1', label: 'א ↔ י (glotal/palatal)', category: 'Semivogais', cost: 0.5 },
+  { id: 'vav_double', pair: ['ו', 'וו'], arity: '1:N', label: 'ו ↔ וו (grafia simples/dupla de vav)', category: 'Regras 1:N / N:1', cost: 0.25 },
+  { id: 'yod_double', pair: ['י', 'יי'], arity: '1:N', label: 'י ↔ יי (grafia simples/dupla de yod)', category: 'Regras 1:N / N:1', cost: 0.25 },
+  { id: 'alef_he_mater', pair: ['א', 'ה'], arity: '1:1', label: 'א ↔ ה (mater lectionis final/gutural)', category: 'Guturais', cost: 0.4 },
+  { id: 'mater_vav_elision', pair: ['ו', ''], arity: '1:N', label: 'ו ↔ ∅ (plene / defectiva)', category: 'Regras 1:N / N:1 (Matres)', cost: 0.45 },
+  { id: 'mater_yod_elision', pair: ['י', ''], arity: '1:N', label: 'י ↔ ∅ (plene / defectiva)', category: 'Regras 1:N / N:1 (Matres)', cost: 0.45 },
 ];
 
 export function getPhoneticCost(a: string, b: string, activeRuleIds: Set<string>): { cost: number; ruleLabel: string | null } {
@@ -143,7 +149,7 @@ export function getPhoneticCost(a: string, b: string, activeRuleIds: Set<string>
   for (const rule of PHONETIC_RULES) {
     if (!activeRuleIds.has(rule.id)) continue;
     const [r1, r2] = rule.pair;
-    if ((na === r1 && nb === r2) || (na === r2 && nb === r1)) {
+    if (r1.length === 1 && r2.length === 1 && ((na === r1 && nb === r2) || (na === r2 && nb === r1))) {
       return { cost: rule.cost, ruleLabel: `${a}→${b} [${rule.label}]` };
     }
   }
@@ -179,36 +185,72 @@ export function weightedPhoneticDistance(
 ): { cost: number; editDistance: number; transformations: string[] } {
   const m = query.length;
   const n = candidate.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(Infinity));
+  const parentI: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
+  const parentJ: number[][] = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0));
   const ops: (string | null)[][] = Array.from({ length: m + 1 }, () => new Array<string | null>(n + 1).fill(null));
 
-  for (let i = 1; i <= m; i++) {
-    dp[i][0] = i;
-    ops[i][0] = `del:${query[i - 1]}`;
-  }
-  for (let j = 1; j <= n; j++) {
-    dp[0][j] = j;
-    ops[0][j] = `ins:${candidate[j - 1]}`;
+  // Coletar regras 1:N / N:1 ativas
+  const multiRules: Array<{ qPart: string; cPart: string; cost: number; label: string }> = [];
+  for (const rule of PHONETIC_RULES) {
+    if (!activeRuleIds.has(rule.id)) continue;
+    const [r1, r2] = rule.pair;
+    if (r1.length !== 1 || r2.length !== 1) {
+      multiRules.push({ qPart: r1, cPart: r2, cost: rule.cost, label: rule.label });
+      multiRules.push({ qPart: r2, cPart: r1, cost: rule.cost, label: rule.label });
+    }
   }
 
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const qa = query[i - 1];
-      const cb = candidate[j - 1];
-      const sub = getPhoneticCost(qa, cb, activeRuleIds);
-      const diagCost = dp[i - 1][j - 1] + sub.cost;
-      const delCost = dp[i - 1][j] + 1;
-      const insCost = dp[i][j - 1] + 1;
+  dp[0][0] = 0;
 
-      if (diagCost <= delCost && diagCost <= insCost) {
-        dp[i][j] = diagCost;
-        ops[i][j] = sub.ruleLabel ? sub.ruleLabel : sub.cost > 0 ? `sub:${qa}→${cb}` : null;
-      } else if (delCost <= insCost) {
-        dp[i][j] = delCost;
-        ops[i][j] = `rem:${qa}`;
-      } else {
-        dp[i][j] = insCost;
-        ops[i][j] = `ins:${cb}`;
+  const tryRelax = (i: number, j: number, pi: number, pj: number, newCost: number, op: string | null) => {
+    if (newCost < dp[i][j] - 1e-9) {
+      dp[i][j] = newCost;
+      parentI[i][j] = pi;
+      parentJ[i][j] = pj;
+      ops[i][j] = op;
+    }
+  };
+
+  const qNorm = normalizeFinalLetters(query);
+  const cNorm = normalizeFinalLetters(candidate);
+
+  for (let i = 0; i <= m; i++) {
+    for (let j = 0; j <= n; j++) {
+      if (i === 0 && j === 0) continue;
+
+      // 1) Substituicao / Match (1:1)
+      if (i > 0 && j > 0) {
+        const qa = query[i - 1];
+        const cb = candidate[j - 1];
+        const sub = getPhoneticCost(qa, cb, activeRuleIds);
+        const label = sub.ruleLabel ? sub.ruleLabel : sub.cost > 0 ? `sub:${qa}→${cb}` : null;
+        tryRelax(i, j, i - 1, j - 1, dp[i - 1][j - 1] + sub.cost, label);
+      }
+
+      // 2) Remocao de caractere em query (i -> i-1)
+      if (i > 0) {
+        tryRelax(i, j, i - 1, j, dp[i - 1][j] + 1, `rem:${query[i - 1]}`);
+      }
+
+      // 3) Insercao de caractere do candidato (j -> j-1)
+      if (j > 0) {
+        tryRelax(i, j, i, j - 1, dp[i][j - 1] + 1, `ins:${candidate[j - 1]}`);
+      }
+
+      // 4) Regras 1:N, N:1 e elisao plene/defectiva
+      for (const mr of multiRules) {
+        const qLen = mr.qPart.length;
+        const cLen = mr.cPart.length;
+        if (i >= qLen && j >= cLen) {
+          const qSlice = qLen === 0 ? '' : qNorm.slice(i - qLen, i);
+          const cSlice = cLen === 0 ? '' : cNorm.slice(j - cLen, j);
+          if (qSlice === mr.qPart && cSlice === mr.cPart) {
+            const rawQ = qLen === 0 ? '∅' : query.slice(i - qLen, i);
+            const rawC = cLen === 0 ? '∅' : candidate.slice(j - cLen, j);
+            tryRelax(i, j, i - qLen, j - cLen, dp[i - qLen][j - cLen] + mr.cost, `${rawQ}→${rawC} [${mr.label}]`);
+          }
+        }
       }
     }
   }
@@ -218,23 +260,17 @@ export function weightedPhoneticDistance(
   let j = n;
   while (i > 0 || j > 0) {
     const op = ops[i][j];
-    if (i > 0 && j > 0 && dp[i][j] <= dp[i - 1][j] + 1 && dp[i][j] <= dp[i][j - 1] + 1) {
-      if (op) transformations.push(op);
-      i--;
-      j--;
-    } else if (i > 0 && (j === 0 || dp[i][j] === dp[i - 1][j] + 1)) {
-      if (op) transformations.push(op);
-      i--;
-    } else {
-      if (op) transformations.push(op);
-      j--;
-    }
+    if (op) transformations.push(op);
+    const pi = parentI[i][j];
+    const pj = parentJ[i][j];
+    i = pi;
+    j = pj;
   }
   transformations.reverse();
 
   return {
     cost: Number(dp[m][n].toFixed(3)),
-    editDistance: levenshteinLetters(normalizeFinalLetters(query), normalizeFinalLetters(candidate)),
+    editDistance: levenshteinLetters(qNorm, cNorm),
     transformations,
   };
 }

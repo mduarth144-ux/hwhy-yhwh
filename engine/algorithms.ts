@@ -16,14 +16,15 @@ import type {
 } from './types.ts';
 
 export const ENGINE_VERSIONS: EngineVersionInfo[] = [
-  { algorithm: 'continuous_stream_search', version: '2.0.0', description: 'Busca determinística exata e de ressegmentação sobre stream consonantal Unicode' },
+  { algorithm: 'continuous_stream_search', version: '2.1.0', description: 'Busca determinística exata e de ressegmentação sobre stream consonantal Unicode' },
   { algorithm: 'aho_corasick_multi', version: '1.0.0', description: 'Autômato de Aho-Corasick para varredura simultânea de múltiplos padrões' },
-  { algorithm: 'consecutive_repetitions', version: '1.2.0', description: 'Detector de repetições adjacentes em palavras e tandem repeats no stream' },
-  { algorithm: 'suffix_array_kasai_lcp', version: '1.1.0', description: 'Suffix Array (prefix-doubling O(N log N)) + Kasai LCP para descoberta automática de frases' },
-  { algorithm: 'verse_sha256_levenshtein', version: '1.0.0', description: 'Comparação exata por hash SHA-256 de versículos e alinhamento Levenshtein letra a letra' },
-  { algorithm: 'inversions_permutations', version: '1.0.0', description: 'Inversão lógica e permutação combinatória limitada com validação lexical no corpus' },
-  { algorithm: 'phonetic_weighted_edit', version: '1.0.0', description: 'Distância fonética experimental com registro explícito de custo e transformações' },
-  { algorithm: 'els_equidistant', version: '1.0.0', description: 'Sequências Equidistantes de Letras (ELS) com controle estatístico de expectativa aleatória' },
+  { algorithm: 'consecutive_repetitions', version: '1.3.0', description: 'Detector de repetições adjacentes em palavras e tandem repeats no stream' },
+  { algorithm: 'suffix_array_kasai_lcp', version: '2.0.0', description: 'Suffix Array (radix counting sort O(N log N)) + Kasai LCP com métricas explícitas de cobertura' },
+  { algorithm: 'verse_sha256_levenshtein', version: '1.1.0', description: 'Comparação exata por hash SHA-256 de versículos e alinhamento Levenshtein letra a letra' },
+  { algorithm: 'inversions_permutations', version: '1.1.0', description: 'Inversão lógica e permutação combinatória limitada com validação lexical no corpus' },
+  { algorithm: 'phonetic_weighted_edit', version: '2.0.0', description: 'Distância fonética experimental no léxico e stream contínuo com regras 1:1, 1:N e N:1' },
+  { algorithm: 'masoretic_sign_inspector', version: '1.0.0', description: 'Auditoria determinística de sinais massoréticos e vocalizações atestadas do Tetragrama' },
+  { algorithm: 'els_equidistant', version: '1.1.0', description: 'Sequências Equidistantes de Letras (ELS) com controle estatístico de expectativa aleatória' },
 ];
 
 // ============================================================================
@@ -111,6 +112,7 @@ export interface ContinuousSearchParams {
   crossBooks?: boolean;
   page?: number;
   pageSize?: number;
+  translationId?: string | null;
 }
 
 export function searchContinuousStream(corpus: TanakhCorpus, params: ContinuousSearchParams) {
@@ -253,6 +255,7 @@ export function searchContinuousStream(corpus: TanakhCorpus, params: ContinuousS
     corpus.buildOccurrence(h.book, h.start, h.end, {
       evidenceTier: h.book.stream.slice(h.start, h.end) === h.pattern || !normalizeFinals ? 'evidencia_textual' : 'correspondencia_estrutural',
       parametersSummary: paramSummary,
+      translationId: params.translationId,
     }),
   );
 
@@ -265,7 +268,7 @@ export function searchContinuousStream(corpus: TanakhCorpus, params: ContinuousS
     bookBreakdown: Array.from(bookCounts.values()).sort((a, b) => b.count - a.count),
     occurrences,
     crossBookMatches,
-    algorithmVersion: ac ? 'aho_corasick_multi@1.0.0' : 'continuous_stream_search@2.0.0',
+    algorithmVersion: ac ? 'aho_corasick_multi@1.0.0' : 'continuous_stream_search@2.1.0',
     computationalLimits: 'Busca exaustiva sobre stream contínuo; paginação sem ocultação de contagens totais.',
   };
 }
@@ -280,6 +283,7 @@ export function searchELS(
     includeNegative?: boolean;
     normalizeFinals?: boolean;
     limit?: number;
+    translationId?: string | null;
   },
 ) {
   const cleanQuery = normalizeConsonantal(params.query);
@@ -426,6 +430,7 @@ export function searchELS(
             const vr = book.verses[vIdx];
             let entry = verseMap.get(vIdx);
             if (!entry) {
+              const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
               entry = {
                 vIdx,
                 reference: `${book.ptTitle} ${vr.c}:${vr.v}`,
@@ -434,7 +439,7 @@ export function searchELS(
                 verse: vr.v,
                 vocalized: vr.voc,
                 consonantal: vr.cons,
-                translationPt: vr.pt,
+                translationPt: tr.text,
                 streamLength: vr.e - vr.s,
                 highlights: [],
               };
@@ -530,6 +535,7 @@ export function findConsecutiveRepetitions(
     maxStreamUnitLen?: number;
     page?: number;
     pageSize?: number;
+    translationId?: string | null;
   },
 ) {
   const mode = params.mode ?? 'both';
@@ -567,6 +573,7 @@ export function findConsecutiveRepetitions(
             const vIdx = corpus.findVerseIndexByOffset(book, firstW.start);
             const vr = book.verses[vIdx];
             const unitWords = words.slice(i, i + uLen);
+            const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
             results.push({
               unit: unitWords.map((w) => w.cons).join(' '),
               unitVocalized: unitWords.map((w) => w.voc).join(' '),
@@ -586,7 +593,7 @@ export function findConsecutiveRepetitions(
               endOffset: lastW.end,
               boundaryType: 'palavra_exata',
               verseVocalized: vr.voc,
-              translationPt: vr.pt,
+              translationPt: tr.text,
             });
             i += repeats * uLen;
           } else {
@@ -619,6 +626,7 @@ export function findConsecutiveRepetitions(
             if (!alreadyWord && mode === 'stream') {
               seenStreamStarts.add(key);
               const vr = book.verses[corpus.findVerseIndexByOffset(book, i)];
+              const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
               results.push({
                 unit,
                 unitVocalized: unit,
@@ -635,13 +643,14 @@ export function findConsecutiveRepetitions(
                 endOffset: end,
                 boundaryType: 'subcadeia_stream',
                 verseVocalized: vr.voc,
-                translationPt: vr.pt,
+                translationPt: tr.text,
               });
             } else if (mode === 'both' && !alreadyWord) {
               // No modo 'both', inclui apenas tandem repeats com L >= 4 para evitar ruido de pares de 2 letras
               if (L >= 4) {
                 seenStreamStarts.add(key);
                 const vr = book.verses[corpus.findVerseIndexByOffset(book, i)];
+                const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
                 results.push({
                   unit,
                   unitVocalized: unit,
@@ -658,7 +667,7 @@ export function findConsecutiveRepetitions(
                   endOffset: end,
                   boundaryType: 'subcadeia_stream',
                   verseVocalized: vr.voc,
-                  translationPt: vr.pt,
+                  translationPt: tr.text,
                 });
               }
             }
@@ -700,43 +709,87 @@ export function findConsecutiveRepetitions(
 }
 
 // ============================================================================
-// 4. SUFFIX ARRAY + KASAI LCP (AUTOMATIC PHRASE DISCOVERY)
+// 4. SUFFIX ARRAY + KASAI LCP (O(N log N) RADIX COUNTING SORT, EXHAUSTIVE OR SCOPED)
 // ============================================================================
 export function buildSuffixArrayAndLCP(text: string): { sa: Int32Array; lcp: Int32Array } {
   const n = text.length;
+  if (n === 0) {
+    return { sa: new Int32Array(0), lcp: new Int32Array(0) };
+  }
   const sa = new Int32Array(n);
-  let rank = new Int32Array(n);
-  let tmp = new Int32Array(n);
+  const tmpSa = new Int32Array(n);
+  let rk = new Int32Array(n);
+  let tmpRk = new Int32Array(n);
 
+  // Alfabeto hebraico + separador '$' fica em 0..2048; fallback para charCode maximo caso haja outro simbolo
+  let maxVal = 256;
   for (let i = 0; i < n; i++) {
-    sa[i] = i;
-    rank[i] = text.charCodeAt(i);
+    const c = text.charCodeAt(i);
+    rk[i] = c;
+    if (c > maxVal) maxVal = c;
   }
 
-  // Radix/counting sort O(N log N)
-  for (let k = 1; k < n; k <<= 1) {
-    const cmp = (a: number, b: number) => {
-      if (rank[a] !== rank[b]) return rank[a] - rank[b];
-      const ra = a + k < n ? rank[a + k] : -1;
-      const rb = b + k < n ? rank[b + k] : -1;
-      return ra - rb;
-    };
-    sa.sort(cmp);
-    tmp[sa[0]] = 0;
-    for (let i = 1; i < n; i++) {
-      tmp[sa[i]] = tmp[sa[i - 1]] + (cmp(sa[i - 1], sa[i]) < 0 ? 1 : 0);
+  let alphabet = Math.max(n, maxVal + 1);
+  let cnt = new Int32Array(alphabet);
+
+  for (let i = 0; i < n; i++) cnt[rk[i]]++;
+  for (let i = 1; i < alphabet; i++) cnt[i] += cnt[i - 1];
+  for (let i = n - 1; i >= 0; i--) {
+    sa[--cnt[rk[i]]] = i;
+  }
+
+  let classes = 1;
+  tmpRk[sa[0]] = 0;
+  for (let i = 1; i < n; i++) {
+    if (rk[sa[i]] !== rk[sa[i - 1]]) classes++;
+    tmpRk[sa[i]] = classes - 1;
+  }
+  {
+    const swap = rk;
+    rk = tmpRk;
+    tmpRk = swap;
+  }
+
+  for (let k = 1; k < n && classes < n; k <<= 1) {
+    // 1) Ordena pela segunda metade (pos + k)
+    let p = 0;
+    for (let i = n - k; i < n; i++) tmpSa[p++] = i;
+    for (let i = 0; i < n; i++) {
+      if (sa[i] >= k) tmpSa[p++] = sa[i] - k;
     }
-    const swap = rank;
-    rank = tmp;
-    tmp = swap;
-    if (rank[sa[n - 1]] === n - 1) break;
+
+    // 2) Counting sort estavel pela primeira metade (rk[tmpSa[i]])
+    cnt.fill(0, 0, classes);
+    for (let i = 0; i < n; i++) cnt[rk[tmpSa[i]]]++;
+    for (let i = 1; i < classes; i++) cnt[i] += cnt[i - 1];
+    for (let i = n - 1; i >= 0; i--) {
+      const idx = tmpSa[i];
+      sa[--cnt[rk[idx]]] = idx;
+    }
+
+    classes = 1;
+    tmpRk[sa[0]] = 0;
+    for (let i = 1; i < n; i++) {
+      const cur1 = rk[sa[i]];
+      const prev1 = rk[sa[i - 1]];
+      const cur2 = sa[i] + k < n ? rk[sa[i] + k] : -1;
+      const prev2 = sa[i - 1] + k < n ? rk[sa[i - 1] + k] : -1;
+      if (cur1 !== prev1 || cur2 !== prev2) classes++;
+      tmpRk[sa[i]] = classes - 1;
+    }
+    const swap = rk;
+    rk = tmpRk;
+    tmpRk = swap;
   }
 
   // Kasai LCP O(N)
+  const rankInv = new Int32Array(n);
+  for (let i = 0; i < n; i++) rankInv[sa[i]] = i;
+
   const lcp = new Int32Array(n);
   let h = 0;
   for (let i = 0; i < n; i++) {
-    const r = rank[i];
+    const r = rankInv[i];
     if (r > 0) {
       const j = sa[r - 1];
       while (i + h < n && j + h < n && text.charCodeAt(i + h) === text.charCodeAt(j + h)) {
@@ -759,6 +812,8 @@ export function discoverRecurringPhrasesSuffixArray(
     maxLength?: number;
     minFrequency?: number;
     limit?: number;
+    maxLettersCap?: number;
+    translationId?: string | null;
   },
 ) {
   const minLength = Math.max(4, Math.min(60, params.minLength ?? 9));
@@ -766,36 +821,40 @@ export function discoverRecurringPhrasesSuffixArray(
   const minFrequency = Math.max(2, params.minFrequency ?? 5);
   const limit = Math.min(150, params.limit ?? 60);
 
-  // Construcao do texto de trabalho (livro especifico ou divisao; limite seguro de 320k letras para <300ms)
   const books = corpus.getBooksByScope({ bookSlug: params.bookSlug, division: params.division });
-  const MAX_SA_CHARS = 320_000;
+  const totalScopeLetters = books.reduce((sum, b) => sum + b.stream.length, 0);
+  // Radix counting sort O(N log N) permite indexar até todo o Tanakh (~1.196.840 letras) sem truncamento silencioso
+  const maxCap = Math.min(1_250_000, Math.max(50_000, params.maxLettersCap ?? 1_250_000));
 
   let combinedStream = '';
   const slices: Array<{ book: BookData; start: number; end: number }> = [];
   let truncatedCorpus = false;
+  let analyzedPureLetters = 0;
 
   for (const b of books) {
-    if (combinedStream.length + b.stream.length + 1 > MAX_SA_CHARS && slices.length > 0) {
+    if (analyzedPureLetters + b.stream.length > maxCap && slices.length > 0) {
       truncatedCorpus = true;
       break;
     }
     const s = combinedStream.length;
+    if (b.stream.length > maxCap) {
+      const cut = b.stream.slice(0, maxCap);
+      combinedStream += cut + '$';
+      slices.push({ book: b, start: s, end: s + cut.length });
+      analyzedPureLetters += cut.length;
+      truncatedCorpus = true;
+      break;
+    }
     combinedStream += b.stream + '$';
     slices.push({ book: b, start: s, end: s + b.stream.length });
-  }
-
-  if (combinedStream.length > MAX_SA_CHARS) {
-    combinedStream = combinedStream.slice(0, MAX_SA_CHARS);
-    truncatedCorpus = true;
+    analyzedPureLetters += b.stream.length;
   }
 
   const { sa, lcp } = buildSuffixArrayAndLCP(combinedStream);
   const n = combinedStream.length;
 
-  // Coletar frases repetidas maximais usando intervalos LCP
   const candidateMap = new Map<string, { phrase: string; frequency: number; sampleGlobalOffset: number }>();
 
-  // Varredura linear com pilha para intervalos de comprimento >= minLength
   const stack: Array<{ startIdx: number; len: number }> = [];
   for (let i = 1; i <= n; i++) {
     const currLcp = i < n ? lcp[i] : 0;
@@ -821,7 +880,6 @@ export function discoverRecurringPhrasesSuffixArray(
     }
   }
 
-  // Filtrar substrings redundantes quando ha superstring com mesma frequencia
   const rawList = Array.from(candidateMap.values()).sort(
     (a, b) => b.frequency - a.frequency || b.phrase.length - a.phrase.length,
   );
@@ -834,7 +892,6 @@ export function discoverRecurringPhrasesSuffixArray(
     if (kept.length >= limit) break;
   }
 
-  // Mapear amostra para contexto e fronteira de palavra
   const phrases = kept.map((item) => {
     const slice = slices.find((s) => item.sampleGlobalOffset >= s.start && item.sampleGlobalOffset < s.end) ?? slices[0];
     const localStart = item.sampleGlobalOffset - slice.start;
@@ -842,6 +899,7 @@ export function discoverRecurringPhrasesSuffixArray(
     const occ = corpus.buildOccurrence(slice.book, localStart, localEnd, {
       evidenceTier: 'correspondencia_estrutural',
       parametersSummary: `suffix_array minLen=${minLength} maxLen=${maxLength} minFreq=${minFrequency}`,
+      translationId: params.translationId,
     });
     return {
       phrase: item.phrase,
@@ -855,15 +913,24 @@ export function discoverRecurringPhrasesSuffixArray(
     };
   });
 
+  const coveragePercent =
+    totalScopeLetters > 0 ? Number(((analyzedPureLetters / totalScopeLetters) * 100).toFixed(2)) : 100;
+  const isExhaustive = !truncatedCorpus && analyzedPureLetters >= totalScopeLetters;
+
   return {
     totalDiscovered: candidateMap.size,
     returnedCount: phrases.length,
-    analyzedLetters: combinedStream.length,
+    analyzedLetters: analyzedPureLetters,
+    totalScopeLetters,
+    coveragePercent,
+    isExhaustive,
     analyzedBooks: slices.map((s) => s.book.ptTitle),
     truncatedCorpus,
     phrases,
-    algorithmVersion: 'suffix_array_kasai_lcp@1.1.0',
-    computationalLimits: `Suffix Array + Kasai LCP sobre até ${MAX_SA_CHARS.toLocaleString()} letras; comprimento ${minLength}..${maxLength}; frequência >= ${minFrequency}.`,
+    algorithmVersion: 'suffix_array_kasai_lcp@2.0.0',
+    computationalLimits: isExhaustive
+      ? `Varredura EXAUSTIVA (${coveragePercent}% do escopo: ${analyzedPureLetters.toLocaleString('pt-BR')} / ${totalScopeLetters.toLocaleString('pt-BR')} letras); comprimento ${minLength}..${maxLength}; frequência >= ${minFrequency}.`
+      : `Varredura PARCIAL (${coveragePercent}% do escopo: ${analyzedPureLetters.toLocaleString('pt-BR')} / ${totalScopeLetters.toLocaleString('pt-BR')} letras, teto ${maxCap.toLocaleString('pt-BR')}); NÃO exaustiva.`,
   };
 }
 
@@ -913,7 +980,12 @@ export function diffStringsLetterByLetter(a: string, b: string): DiffOp[] {
   return ops.reverse();
 }
 
-export function findIdenticalVerses(corpus: TanakhCorpus, minLetters = 12, limit = 100) {
+export function findIdenticalVerses(
+  corpus: TanakhCorpus,
+  minLetters = 12,
+  limit = 100,
+  translationId?: string | null,
+) {
   const clusters: Array<{
     hash: string;
     letterLength: number;
@@ -947,7 +1019,7 @@ export function findIdenticalVerses(corpus: TanakhCorpus, minLetters = 12, limit
         verse: item.verse,
         reference: `${item.ptBook} ${item.chapter}:${item.verse}`,
         verseVocalized: item.verseVocalized,
-        translationPt: item.translationPt,
+        translationPt: corpus.resolveVerseTranslation(item.slug, item.chapter, item.verse, translationId).text,
       })),
     });
   }
@@ -956,7 +1028,7 @@ export function findIdenticalVerses(corpus: TanakhCorpus, minLetters = 12, limit
   return {
     totalClusters: clusters.length,
     clusters: clusters.slice(0, limit),
-    algorithmVersion: 'verse_sha256_levenshtein@1.0.0',
+    algorithmVersion: 'verse_sha256_levenshtein@1.1.0',
   };
 }
 
@@ -1045,6 +1117,7 @@ export function analyzeInversionsAndPermutations(
     normalizeFinals?: boolean;
     includePermutations?: boolean;
     includeStreamSubstrings?: boolean;
+    translationId?: string | null;
   },
 ) {
   const clean = normalizeConsonantal(params.term);
@@ -1103,13 +1176,13 @@ export function analyzeInversionsAndPermutations(
   const originalInfo = classifyWord(clean);
   const invertedInfo = classifyWord(inverted);
 
-  // Ocorrencias no corpus para a forma invertida
   const invertedSearch = inverted
     ? searchContinuousStream(corpus, {
         query: inverted,
         normalizeFinals,
         boundaryFilter: params.includeStreamSubstrings ? 'all' : 'exact_word',
         pageSize: 25,
+        translationId: params.translationId,
       })
     : null;
 
@@ -1152,13 +1225,13 @@ export function analyzeInversionsAndPermutations(
     invertedSampleOccurrences: invertedSearch?.occurrences ?? [],
     invertedTotalStreamHits: invertedSearch?.totalCount ?? 0,
     permutations: permutationsData,
-    algorithmVersion: 'inversions_permutations@1.0.0',
+    algorithmVersion: 'inversions_permutations@1.1.0',
     computationalLimits: 'Permutações limitadas a palavras <= 7 letras (máx. 720 arranjos únicos) com validação integral no léxico do Tanakh.',
   };
 }
 
 // ============================================================================
-// 7. EXPERIMENTAL PHONETIC SEARCH
+// 7. EXPERIMENTAL PHONETIC SEARCH (LEXICON + CONTINUOUS CROSS-WORD STREAM)
 // ============================================================================
 export function experimentalPhoneticSearch(
   corpus: TanakhCorpus,
@@ -1167,22 +1240,36 @@ export function experimentalPhoneticSearch(
     activeRuleIds: string[];
     maxCost?: number;
     limit?: number;
+    mode?: 'lexicon' | 'continuous' | 'both';
+    division?: string;
+    bookSlug?: string;
+    translationId?: string | null;
   },
 ) {
   const clean = normalizeConsonantal(params.term);
   const maxCost = Math.min(2.5, Math.max(0.2, params.maxCost ?? 1.2));
   const limit = Math.min(100, Math.max(10, params.limit ?? 50));
+  const mode = params.mode ?? 'lexicon';
   const ruleSet = new Set(params.activeRuleIds);
 
   if (!clean) {
     return {
       query: '',
+      mode,
+      activeRules: [] as typeof PHONETIC_RULES,
       availableRules: PHONETIC_RULES,
+      totalLexiconCandidates: 0,
       matches: [],
-      algorithmVersion: 'phonetic_weighted_edit@1.0.0',
+      continuousTotalCandidates: 0,
+      continuousExactCount: 0,
+      continuousApproximateCount: 0,
+      continuousMatches: [] as OccurrenceResult[],
+      disclaimer: 'Hipóteses fonéticas experimentais: transformações e custos registrados explicitamente; nunca exibidas como ocorrências exatas.',
+      algorithmVersion: 'phonetic_weighted_edit@2.0.0',
     };
   }
 
+  // 1) Busca no Lexico (palavras isoladas)
   const candidates: Array<{
     word: string;
     cost: number;
@@ -1191,33 +1278,41 @@ export function experimentalPhoneticSearch(
     lexiconCount: number;
     booksCount: number;
     language: string;
+    matchType: 'exact_consonantal' | 'phonetic_approximation';
   }> = [];
 
-  for (const [word, stat] of corpus.lexicon.entries()) {
-    if (Math.abs(word.length - clean.length) > Math.ceil(maxCost)) continue;
-    const res = weightedPhoneticDistance(clean, word, ruleSet);
-    if (res.cost <= maxCost) {
-      candidates.push({
-        word,
-        cost: res.cost,
-        editDistance: res.editDistance,
-        transformations: res.transformations,
-        lexiconCount: stat.count,
-        booksCount: stat.booksCount,
-        language: stat.hasAramaic && !stat.hasHebrew ? 'Aramaico Bíblico' : 'Hebraico Bíblico',
-      });
+  if (mode === 'lexicon' || mode === 'both') {
+    const hasExpansionRules = PHONETIC_RULES.some(
+      (r) => ruleSet.has(r.id) && r.pair[0].length !== r.pair[1].length,
+    );
+    const maxLenDelta = Math.ceil(maxCost) + (hasExpansionRules ? 2 : 0);
+
+    for (const [word, stat] of corpus.lexicon.entries()) {
+      if (Math.abs(word.length - clean.length) > maxLenDelta) continue;
+      const res = weightedPhoneticDistance(clean, word, ruleSet);
+      if (res.cost <= maxCost) {
+        candidates.push({
+          word,
+          cost: res.cost,
+          editDistance: res.editDistance,
+          transformations: res.transformations,
+          lexiconCount: stat.count,
+          booksCount: stat.booksCount,
+          language: stat.hasAramaic && !stat.hasHebrew ? 'Aramaico Bíblico' : 'Hebraico Bíblico',
+          matchType: res.cost === 0 ? 'exact_consonantal' : 'phonetic_approximation',
+        });
+      }
     }
+    candidates.sort((a, b) => a.cost - b.cost || b.lexiconCount - a.lexiconCount);
   }
 
-  candidates.sort((a, b) => a.cost - b.cost || b.lexiconCount - a.lexiconCount);
   const topCandidates = candidates.slice(0, limit);
-
-  // Busca uma amostra real de versiculo para cada candidato
   const enriched = topCandidates.map((cand) => {
     const sample = searchContinuousStream(corpus, {
       query: cand.word,
       boundaryFilter: 'exact_word',
       pageSize: 2,
+      translationId: params.translationId,
     });
     return {
       ...cand,
@@ -1226,14 +1321,192 @@ export function experimentalPhoneticSearch(
     };
   });
 
+  // 2) Busca no Stream Continuo (atravessa limites de palavras e versiculos)
+  let continuousMatches: OccurrenceResult[] = [];
+  let continuousTotalCandidates = 0;
+  let continuousExactCount = 0;
+  let continuousApproximateCount = 0;
+
+  if (mode === 'continuous' || mode === 'both') {
+    const qChars = [...normalizeFinalLetters(clean)];
+    const m = qChars.length;
+
+    // Precomputa conjunto de caracteres compativeis e custo minimo se ausente para poda admissivel O(1)
+    const compatByPos: Array<Set<string>> = qChars.map((ch) => new Set([ch]));
+    const minSubCostByPos: number[] = new Array(m).fill(1.0);
+    const minElisionByPos: number[] = new Array(m).fill(1.0);
+
+    for (const rule of PHONETIC_RULES) {
+      if (!ruleSet.has(rule.id)) continue;
+      const [r1, r2] = rule.pair;
+      for (let p = 0; p < m; p++) {
+        const qch = qChars[p];
+        if (r1 === qch && r2 === '') {
+          minElisionByPos[p] = Math.min(minElisionByPos[p], rule.cost);
+        } else if (r2 === qch && r1 === '') {
+          minElisionByPos[p] = Math.min(minElisionByPos[p], rule.cost);
+        } else if (r1.length === 1 && r2.length === 1) {
+          if (r1 === qch) {
+            compatByPos[p].add(r2);
+            minSubCostByPos[p] = Math.min(minSubCostByPos[p], rule.cost);
+          } else if (r2 === qch) {
+            compatByPos[p].add(r1);
+            minSubCostByPos[p] = Math.min(minSubCostByPos[p], rule.cost);
+          }
+        } else if (r1.length > 0 && r2.length > 0) {
+          // Para regras 1:N (ex: ו <-> וו), ambos os caracteres individuais contam como compativeis na poda
+          if (r1 === qch) {
+            for (const c of r2) compatByPos[p].add(c);
+            minSubCostByPos[p] = Math.min(minSubCostByPos[p], rule.cost);
+          } else if (r2.includes(qch)) {
+            for (const c of r1) compatByPos[p].add(c);
+            minSubCostByPos[p] = Math.min(minSubCostByPos[p], rule.cost);
+          }
+        }
+      }
+    }
+
+    const minMissCostByPos = qChars.map((_, p) => Math.min(1.0, minSubCostByPos[p], minElisionByPos[p]));
+    const maxDel = Math.floor(maxCost / 0.45);
+    const minWinLen = Math.max(2, m - maxDel);
+    const maxWinLen = m + Math.floor(maxCost / 0.25);
+
+    const books = corpus.getBooksByScope({ division: params.division, bookSlug: params.bookSlug });
+    const rawStreamHits: Array<{
+      book: BookData;
+      start: number;
+      end: number;
+      cost: number;
+      editDistance: number;
+      transformations: string[];
+      matchType: 'exact_consonantal' | 'phonetic_approximation';
+    }> = [];
+
+    // Tabela de frequencia deslizante em codigo Unicode hebraico (0x05D0..0x05EA => 0..26)
+    const charCounts = new Int32Array(32);
+    const toIdx = (code: number) => code - 0x05d0;
+
+    for (const book of books) {
+      const stream = book.stream;
+      const normStream = book.streamFinalsNorm;
+      const N = stream.length;
+      if (N < minWinLen) continue;
+
+      let lastAcceptedEnd = -1;
+      for (let start = 0; start <= N - minWinLen; start++) {
+        // Poda admissivel sobre a janela maxima [start, start + maxWinLen)
+        charCounts.fill(0);
+        const outerEnd = Math.min(N, start + maxWinLen);
+        for (let t = start; t < outerEnd; t++) {
+          const ci = toIdx(normStream.charCodeAt(t));
+          if (ci >= 0 && ci < 27) charCounts[ci]++;
+        }
+
+        let lowerBound = 0;
+        for (let p = 0; p < m; p++) {
+          let found = false;
+          for (const allowed of compatByPos[p]) {
+            const ci = toIdx(allowed.charCodeAt(0));
+            if (ci >= 0 && ci < 27 && charCounts[ci] > 0) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            lowerBound += minMissCostByPos[p];
+            if (lowerBound > maxCost + 1e-9) break;
+          }
+        }
+        if (lowerBound > maxCost + 1e-9) continue;
+
+        let bestForStart: { end: number; cost: number; editDistance: number; transformations: string[] } | null = null;
+        for (let len = minWinLen; len <= maxWinLen && start + len <= N; len++) {
+          const cand = stream.slice(start, start + len);
+          const res = weightedPhoneticDistance(clean, cand, ruleSet);
+          if (res.cost <= maxCost) {
+            if (
+              !bestForStart ||
+              res.cost < bestForStart.cost - 1e-9 ||
+              (Math.abs(res.cost - bestForStart.cost) <= 1e-9 &&
+                Math.abs(len - m) < Math.abs(bestForStart.end - start - m))
+            ) {
+              bestForStart = {
+                end: start + len,
+                cost: res.cost,
+                editDistance: res.editDistance,
+                transformations: res.transformations,
+              };
+            }
+          }
+        }
+
+        if (bestForStart) {
+          // Evita repeticao redundante dentro do mesmo intervalo imediato quando já existe match com custo melhor/igual
+          if (start < lastAcceptedEnd && rawStreamHits.length > 0 && rawStreamHits[rawStreamHits.length - 1].book.slug === book.slug) {
+            const prev = rawStreamHits[rawStreamHits.length - 1];
+            if (bestForStart.cost < prev.cost - 1e-9) {
+              prev.start = start;
+              prev.end = bestForStart.end;
+              prev.cost = bestForStart.cost;
+              prev.editDistance = bestForStart.editDistance;
+              prev.transformations = bestForStart.transformations;
+              prev.matchType = bestForStart.cost === 0 ? 'exact_consonantal' : 'phonetic_approximation';
+              lastAcceptedEnd = bestForStart.end;
+            }
+            continue;
+          }
+          const mt = bestForStart.cost === 0 ? 'exact_consonantal' : 'phonetic_approximation';
+          rawStreamHits.push({
+            book,
+            start,
+            end: bestForStart.end,
+            cost: bestForStart.cost,
+            editDistance: bestForStart.editDistance,
+            transformations: bestForStart.transformations,
+            matchType: mt,
+          });
+          lastAcceptedEnd = bestForStart.end;
+          if (rawStreamHits.length >= 4000) break;
+        }
+      }
+      if (rawStreamHits.length >= 4000) break;
+    }
+
+    continuousTotalCandidates = rawStreamHits.length;
+    for (const h of rawStreamHits) {
+      if (h.matchType === 'exact_consonantal') continuousExactCount++;
+      else continuousApproximateCount++;
+    }
+
+    rawStreamHits.sort((a, b) => a.cost - b.cost || a.start - b.start);
+    const paramSummary = `fonetica_continua="${clean}" | maxCost=${maxCost} | regras=[${Array.from(ruleSet).join(',')}]`;
+    continuousMatches = rawStreamHits.slice(0, limit).map((h) =>
+      corpus.buildOccurrence(h.book, h.start, h.end, {
+        evidenceTier: h.matchType === 'exact_consonantal' ? 'evidencia_textual' : 'hipotese_fonetica',
+        parametersSummary: paramSummary,
+        transformationLog: h.transformations,
+        cost: h.cost,
+        distance: h.editDistance,
+        translationId: params.translationId,
+        matchType: h.matchType,
+      }),
+    );
+  }
+
   return {
     query: clean,
+    mode,
     activeRules: PHONETIC_RULES.filter((r) => ruleSet.has(r.id)),
     availableRules: PHONETIC_RULES,
     totalLexiconCandidates: candidates.length,
     matches: enriched,
-    disclaimer: 'Hipóteses fonéticas experimentais: transformações e custos registrados explicitamente; nunca exibidas como ocorrências exatas.',
-    algorithmVersion: 'phonetic_weighted_edit@1.0.0',
+    continuousTotalCandidates,
+    continuousExactCount,
+    continuousApproximateCount,
+    continuousMatches,
+    disclaimer:
+      'Hipóteses fonéticas experimentais: correspondências consonantais exatas (custo 0) são separadas explicitamente de aproximações fonéticas com transformações registradas.',
+    algorithmVersion: 'phonetic_weighted_edit@2.0.0',
   };
 }
 
@@ -1339,13 +1612,14 @@ export const LABORATORIES: LaboratoryDef[] = [
   },
 ];
 
-export function analyzeIdentityDeclarations(corpus: TanakhCorpus) {
+export function analyzeIdentityDeclarations(corpus: TanakhCorpus, translationId?: string | null) {
   const summary = IDENTITY_INITIAL_VOCABULARY.map((item) => {
     const clean = item.term.split(' ').map(normalizeConsonantal).join('');
     const search = searchContinuousStream(corpus, {
       query: clean,
       boundaryFilter: item.term.includes(' ') ? 'multi_word' : 'exact_word',
       pageSize: 8,
+      translationId,
     });
     return {
       term: item.term,
@@ -1434,6 +1708,7 @@ export function runLaboratories(
     enableCrossings?: boolean;
     division?: string;
     bookSlug?: string;
+    translationId?: string | null;
   },
 ) {
   const selectedLabs = LABORATORIES.filter((l) => params.selectedLabIds.includes(l.id));
@@ -1519,6 +1794,7 @@ export function runLaboratories(
           ((activeLabs.length > 1 && distinctLabs.size >= 2) || (activeLabs.length === 1 && distinctTerms.size >= 2));
 
         if (passesCrossing && crossings.length < 150) {
+          const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
           crossings.push({
             reference: `${book.ptTitle} ${vr.c}:${vr.v}`,
             slug: book.slug,
@@ -1532,7 +1808,7 @@ export function runLaboratories(
               wordVocalized: h.voc,
             })),
             verseVocalized: vr.voc,
-            translationPt: vr.pt,
+            translationPt: tr.text,
           });
         }
       }
@@ -1692,9 +1968,315 @@ export function runValidationSuite(corpus: TanakhCorpus) {
 }
 
 // ============================================================================
-// 10. DASHBOARD DE ESTATISTICAS E DESCOBERTAS DETERMINISTICAS
+// 10. LABORATÓRIO MASSORÉTICO (§12) — SINAIS E VOCALIZAÇÕES DO TETRAGRAMA
 // ============================================================================
-export function buildDashboardSummary(corpus: TanakhCorpus) {
+export interface MasoreticSignDef {
+  id: string;
+  label: string;
+  hebrewExample: string;
+  category: 'vogal' | 'diacritico' | 'separador' | 'cantilacao';
+  description: string;
+}
+
+export const MASORETIC_SIGN_DEFS: MasoreticSignDef[] = [
+  { id: 'holam', label: 'Holam (חולם)', hebrewExample: 'בֹ / בֹּ', category: 'vogal', description: 'Ponto vocálico superior (U+05B9 / U+05BA)' },
+  { id: 'shuruk', label: 'Shuruk (שורוק)', hebrewExample: 'וּ', category: 'vogal', description: 'Vav com ponto medial (וּ) sem vogal subscrita' },
+  { id: 'qamats', label: 'Qamats / Qamats Qatan (קמץ)', hebrewExample: 'בָ / בׇ', category: 'vogal', description: 'Sinal massorético U+05B8 / U+05C7' },
+  { id: 'patach', label: 'Patach (פתח)', hebrewExample: 'בַ', category: 'vogal', description: 'Vogal breve subscrita (U+05B7)' },
+  { id: 'segol', label: 'Segol (סגול)', hebrewExample: 'בֶ', category: 'vogal', description: 'Três pontos em triângulo invertido (U+05B6)' },
+  { id: 'tzere', label: 'Tzere (צירי)', hebrewExample: 'בֵ', category: 'vogal', description: 'Dois pontos horizontais (U+05B5)' },
+  { id: 'hiriq', label: 'Hiriq (חיריק)', hebrewExample: 'בִ', category: 'vogal', description: 'Ponto subscrito único (U+05B4)' },
+  { id: 'kubutz', label: 'Kubutz (קובוץ)', hebrewExample: 'בֻ', category: 'vogal', description: 'Três pontos diagonais subscritos (U+05BB)' },
+  { id: 'sheva', label: 'Sheva (שווא)', hebrewExample: 'בְ', category: 'vogal', description: 'Dois pontos verticais subscritos (U+05B0)' },
+  { id: 'hataf', label: 'Hatafim (חטפים)', hebrewExample: 'אֱ / אֲ / אֳ', category: 'vogal', description: 'Semivogais reduzidas (U+05B1..U+05B3)' },
+  { id: 'dagesh', label: 'Dagesh / Mapiq (דגש)', hebrewExample: 'בּ / הּ', category: 'diacritico', description: 'Ponto interno consonantal (U+05BC fora de shuruk)' },
+  { id: 'shin_sin_dot', label: 'Pontos Shin / Sin', hebrewExample: 'שׁ / שׂ', category: 'diacritico', description: 'Distinção šin/śin (U+05C1 / U+05C2)' },
+  { id: 'maqaf', label: 'Maqaf (מקף)', hebrewExample: 'כָּל־הָאָרֶץ', category: 'separador', description: 'Hífen massorético de ligação prosódica (U+05BE)' },
+  { id: 'paseq', label: 'Paseq (פסק)', hebrewExample: 'אֱלֹהִים ׀', category: 'separador', description: 'Barra vertical separadora massorética (U+05C0)' },
+  { id: 'teamim', label: "Te'amim (טעמים)", hebrewExample: 'בְּרֵאשִׁ֖ית', category: 'cantilacao', description: 'Sinais massoréticos de cantilação (U+0591..U+05AF)' },
+];
+
+function stripHtmlPlain(raw: string): string {
+  return raw
+    .replace(/<[^>]+>/g, '')
+    .replace(/&thinsp;/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function hasMasoreticSign(token: string, signId: string): boolean {
+  switch (signId) {
+    case 'holam':
+      return /[\u05B9\u05BA]/.test(token);
+    case 'shuruk':
+      return /\u05D5\u05BC(?![\u05B0-\u05BB\u05C7])/.test(token);
+    case 'qamats':
+      return /[\u05B8\u05C7]/.test(token);
+    case 'patach':
+      return /\u05B7/.test(token);
+    case 'segol':
+      return /\u05B6/.test(token);
+    case 'tzere':
+      return /\u05B5/.test(token);
+    case 'hiriq':
+      return /\u05B4/.test(token);
+    case 'kubutz':
+      return /\u05BB/.test(token);
+    case 'sheva':
+      return /\u05B0/.test(token);
+    case 'hataf':
+      return /[\u05B1\u05B2\u05B3]/.test(token);
+    case 'dagesh':
+      return /[^\u05D5]\u05BC|\u05D5\u05BC[\u05B0-\u05BB\u05C7]/.test(token);
+    case 'shin_sin_dot':
+      return /[\u05C1\u05C2]/.test(token);
+    case 'maqaf':
+      return /\u05BE/.test(token);
+    case 'paseq':
+      return /\u05C0/.test(token);
+    case 'teamim':
+      return /[\u0591-\u05AF]/.test(token);
+    default:
+      return false;
+  }
+}
+
+function describeNiqqudSequence(vocWord: string): string {
+  const labels: string[] = [];
+  if (/\u05B0/.test(vocWord)) labels.push('Sheva');
+  if (/[\u05B1-\u05B3]/.test(vocWord)) labels.push('Hataf');
+  if (/[\u05B9\u05BA]/.test(vocWord)) labels.push('Holam');
+  if (/\u05B8/.test(vocWord)) labels.push('Qamats');
+  if (/\u05B4/.test(vocWord)) labels.push('Hiriq');
+  if (/\u05B5/.test(vocWord)) labels.push('Tzere');
+  if (/\u05B6/.test(vocWord)) labels.push('Segol');
+  if (/\u05B7/.test(vocWord)) labels.push('Patach');
+  return labels.length > 0 ? labels.join(' + ') : 'Sem niqqud';
+}
+
+function inferTraditionalReadingNote(vocForm: string): string {
+  if (/\u05B4/.test(vocForm)) {
+    return 'Pontuação tradicional associada ao Qere perpetuum "Elohim" (ex.: após Adonai).';
+  }
+  if (/[\u05B9\u05BA]/.test(vocForm)) {
+    return 'Pontuação tradicional com Holam explícito preservada no códice (Adonai pleno / tradição massorética).';
+  }
+  if (/\u05B0/.test(vocForm) && /\u05B8/.test(vocForm)) {
+    return 'Pontuação massorética padrão associada ao Qere perpetuum "Adonai" (vogais reduzidas sobre consoantes do Tetragrama).';
+  }
+  return 'Forma vocalizada atestada no corpus massorético; grafia consonantal e leitura tradicional são registradas separadamente.';
+}
+
+export function analyzeMasoreticFeatures(
+  corpus: TanakhCorpus,
+  params: {
+    selectedSigns?: string[];
+    matchMode?: 'word_all' | 'verse_all';
+    consonantalFilter?: string;
+    division?: string;
+    bookSlug?: string;
+    page?: number;
+    pageSize?: number;
+    translationId?: string | null;
+  },
+) {
+  const selectedSigns = Array.from(new Set((params.selectedSigns ?? []).filter(Boolean)));
+  const matchMode = params.matchMode ?? 'word_all';
+  const cleanFilter = params.consonantalFilter ? normalizeConsonantal(params.consonantalFilter) : '';
+  const page = Math.max(1, params.page ?? 1);
+  const pageSize = Math.min(80, Math.max(10, params.pageSize ?? 25));
+
+  const books = corpus.getBooksByScope({ division: params.division, bookSlug: params.bookSlug });
+
+  // 1) Auditoria integral de todas as vocalizacoes efetivamente atestadas de יהוה no escopo
+  const tetraMap = new Map<
+    string,
+    {
+      vocalizedForm: string;
+      consonantal: string;
+      count: number;
+      niqqudProfile: string;
+      traditionNote: string;
+      divisionCounts: { Torah: number; Prophets: number; Writings: number };
+      samples: Array<{
+        reference: string;
+        slug: string;
+        chapter: number;
+        verse: number;
+        verseOriginal: string;
+        verseVocalized: string;
+        verseConsonantal: string;
+        verseStream: string;
+        translationPt: string;
+      }>;
+    }
+  >();
+
+  let totalTetragrammaton = 0;
+
+  // 2) Contagem de sinais e busca combinatoria em versiculos
+  const signVerseCounts: Record<string, number> = {};
+  for (const def of MASORETIC_SIGN_DEFS) {
+    signVerseCounts[def.id] = 0;
+  }
+
+  const matchedVerses: Array<{
+    reference: string;
+    slug: string;
+    chapter: number;
+    verse: number;
+    matchedTokens: string[];
+    verseOriginal: string;
+    verseVocalized: string;
+    verseConsonantal: string;
+    verseStream: string;
+    translationPt: string;
+  }> = [];
+
+  for (const book of books) {
+    for (const w of book.words) {
+      if (w.cons !== 'יהוה') continue;
+      totalTetragrammaton++;
+      const formKey = w.voc;
+      let entry = tetraMap.get(formKey);
+      if (!entry) {
+        entry = {
+          vocalizedForm: formKey,
+          consonantal: 'יהוה',
+          count: 0,
+          niqqudProfile: describeNiqqudSequence(formKey),
+          traditionNote: inferTraditionalReadingNote(formKey),
+          divisionCounts: { Torah: 0, Prophets: 0, Writings: 0 },
+          samples: [],
+        };
+        tetraMap.set(formKey, entry);
+      }
+      entry.count++;
+      entry.divisionCounts[book.division]++;
+      if (entry.samples.length < 4) {
+        const vr = book.verses.find((v) => v.c === w.chapter && v.v === w.verse);
+        if (vr) {
+          const ref = `${book.ptTitle} ${vr.c}:${vr.v}`;
+          if (!entry.samples.some((s) => s.reference === ref)) {
+            const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
+            entry.samples.push({
+              reference: ref,
+              slug: book.slug,
+              chapter: vr.c,
+              verse: vr.v,
+              verseOriginal: stripHtmlPlain(vr.orig),
+              verseVocalized: vr.voc,
+              verseConsonantal: vr.cons,
+              verseStream: book.stream.slice(vr.s, vr.e),
+              translationPt: tr.text,
+            });
+          }
+        }
+      }
+    }
+
+    for (const vr of book.verses) {
+      const origPlain = stripHtmlPlain(vr.orig);
+      for (const def of MASORETIC_SIGN_DEFS) {
+        if (hasMasoreticSign(origPlain, def.id)) {
+          signVerseCounts[def.id]++;
+        }
+      }
+
+      if (selectedSigns.length > 0 || cleanFilter.length > 0) {
+        const tokens = origPlain.split(/\s+/).filter(Boolean);
+        let versePasses = false;
+        const matchedTokens: string[] = [];
+
+        if (matchMode === 'word_all') {
+          for (const tok of tokens) {
+            const signsOk = selectedSigns.every((sid) => hasMasoreticSign(tok, sid));
+            const consOk = !cleanFilter || normalizeConsonantal(tok).includes(cleanFilter);
+            if (signsOk && consOk) {
+              versePasses = true;
+              matchedTokens.push(tok);
+            }
+          }
+        } else {
+          const verseSignsOk = selectedSigns.every((sid) => hasMasoreticSign(origPlain, sid));
+          const verseConsOk = !cleanFilter || book.stream.slice(vr.s, vr.e).includes(cleanFilter);
+          if (verseSignsOk && verseConsOk) {
+            versePasses = true;
+            for (const tok of tokens) {
+              if (
+                selectedSigns.some((sid) => hasMasoreticSign(tok, sid)) ||
+                (cleanFilter && normalizeConsonantal(tok).includes(cleanFilter))
+              ) {
+                matchedTokens.push(tok);
+              }
+            }
+          }
+        }
+
+        if (versePasses) {
+          const tr = corpus.resolveVerseTranslation(book.slug, vr.c, vr.v, params.translationId);
+          matchedVerses.push({
+            reference: `${book.ptTitle} ${vr.c}:${vr.v}`,
+            slug: book.slug,
+            chapter: vr.c,
+            verse: vr.v,
+            matchedTokens: matchedTokens.slice(0, 8),
+            verseOriginal: origPlain,
+            verseVocalized: vr.voc,
+            verseConsonantal: vr.cons,
+            verseStream: book.stream.slice(vr.s, vr.e),
+            translationPt: tr.text,
+          });
+        }
+      }
+    }
+  }
+
+  const tetragrammatonForms = Array.from(tetraMap.values())
+    .sort((a, b) => b.count - a.count)
+    .map((f) => ({
+      ...f,
+      percent: totalTetragrammaton > 0 ? Number(((f.count / totalTetragrammaton) * 100).toFixed(2)) : 0,
+    }));
+
+  const startIdx = (page - 1) * pageSize;
+
+  return {
+    scope: {
+      division: params.division ?? 'all',
+      bookSlug: params.bookSlug ?? 'all',
+      booksCount: books.length,
+      totalVersesScanned: books.reduce((s, b) => s + b.verses.length, 0),
+    },
+    availableSigns: MASORETIC_SIGN_DEFS.map((def) => ({
+      ...def,
+      versesWithSign: signVerseCounts[def.id] ?? 0,
+    })),
+    tetragrammaton: {
+      totalOccurrences: totalTetragrammaton,
+      distinctVocalizedFormsCount: tetragrammatonForms.length,
+      forms: tetragrammatonForms,
+      methodologicalNote:
+        'O motor preserva a forma massorética original sem substituir o Nome automaticamente. Grafia consonantal (יהוה), pontuação massorética (niqqud/te’amim), leitura tradicional (Qere perpetuum Adonai/Elohim) e hipóteses fonéticas permanecem explicitamente separadas.',
+    },
+    signSearch: {
+      selectedSigns,
+      matchMode,
+      consonantalFilter: cleanFilter,
+      totalMatchedVerses: matchedVerses.length,
+      page,
+      pageSize,
+      items: matchedVerses.slice(startIdx, startIdx + pageSize),
+    },
+    algorithmVersion: 'masoretic_sign_inspector@1.0.0',
+  };
+}
+
+// ============================================================================
+// 11. DASHBOARD DE ESTATISTICAS E DESCOBERTAS DETERMINISTICAS
+// ============================================================================
+export function buildDashboardSummary(corpus: TanakhCorpus, translationId?: string | null) {
   const ketivQereTotal = corpus.books.reduce(
     (acc, b) => acc + b.masoreticDiffs.reduce((s, d) => s + d.items.length, 0),
     0,
@@ -1820,8 +2402,11 @@ export function buildDashboardSummary(corpus: TanakhCorpus) {
       boundaryFilter: 'all',
       page: 1,
       pageSize: 10,
+      translationId,
     });
     const first = res.occurrences[0] ?? null;
+    const exactWordsCount = (res.boundaryBreakdown.exact_word ?? 0) + (res.boundaryBreakdown.multi_word ?? 0);
+    const nonWordStreamCount = res.totalCount - exactWordsCount;
     return {
       id: spec.id,
       query: spec.query,
@@ -1831,6 +2416,8 @@ export function buildDashboardSummary(corpus: TanakhCorpus) {
       category: spec.category,
       insight: spec.insight,
       totalCount: res.totalCount,
+      exactWordsCount,
+      nonWordStreamCount,
       boundaryBreakdown: res.boundaryBreakdown,
       topBooks: res.bookBreakdown.slice(0, 4),
       sample: first
@@ -1841,6 +2428,7 @@ export function buildDashboardSummary(corpus: TanakhCorpus) {
             verse: first.verse,
             verseVocalized: first.verseVocalized,
             translationPt: first.translationPt,
+            translationPtSource: first.translationPtSource,
             matchedStream: first.matchedStream,
             startOffset: first.startOffset,
             endOffset: first.endOffset,
@@ -1855,6 +2443,7 @@ export function buildDashboardSummary(corpus: TanakhCorpus) {
     maxUnitWords: 2,
     page: 1,
     pageSize: 12,
+    translationId,
   });
   const reps3x = findConsecutiveRepetitions(corpus, {
     mode: 'words',
@@ -1862,9 +2451,10 @@ export function buildDashboardSummary(corpus: TanakhCorpus) {
     maxUnitWords: 1,
     page: 1,
     pageSize: 12,
+    translationId,
   });
 
-  const identical = findIdenticalVerses(corpus, 18, 8);
+  const identical = findIdenticalVerses(corpus, 18, 8, translationId);
   const cmpPs14_53 = compareChapters(corpus, { slug: 'psalms', chapter: 14 }, { slug: 'psalms', chapter: 53 });
   const cmpPs18_2Sm22 = compareChapters(corpus, { slug: 'psalms', chapter: 18 }, { slug: 'ii_samuel', chapter: 22 });
   const cmpIs37_2Rs19 = compareChapters(corpus, { slug: 'isaiah', chapter: 37 }, { slug: 'ii_kings', chapter: 19 });
@@ -1876,10 +2466,12 @@ export function buildDashboardSummary(corpus: TanakhCorpus) {
     maxSkip: 50,
     includeNegative: false,
     limit: 10,
+    translationId,
   });
 
   return {
     generatedAtUtc: new Date().toISOString(),
+    activeTranslationId: translationId ?? corpus.resolveVerseTranslation('genesis', 1, 1, translationId).translationId ?? 'acf',
     corpusTotals: {
       books: corpus.books.length,
       traditionalBooks: corpus.manifest.traditional_books_count,

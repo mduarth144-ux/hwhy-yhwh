@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yawe.local/schemas/translation-book.v1.schema.json",
+  "title": "YA-WE Translation Book Payload v1",
+  "description": "Arquivo individual de livro em data/translations/<translation_id>/<bookId>.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "translationId",
+    "bookId",
+    "title",
+    "canonGroup",
+    "language",
+    "versification",
+    "text"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "translationId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,47}$"
+    },
+    "bookId": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nativeTitle": {
+      "type": "string"
+    },
+    "canonGroup": {
+      "type": "string",
+      "enum": [
+        "torah",
+        "prophets",
+        "writings",
+        "deuterocanonical",
+        "new_testament",
+        "apocrypha_addition"
+      ]
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    },
+    "versionTitle": { "type": "string" },
+    "versionSource": { "type": "string" },
+    "versification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "mappedToMasoretic", "validated"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": ["masoretic", "christian_standard", "lxx", "vulgate", "mixed"]
+        },
+        "mappedToMasoretic": { "type": "boolean" },
+        "validated": { "type": "boolean" },
+        "sourceNumberingPreserved": { "type": "boolean" },
+        "notes": { "type": "string" }
+      }
+    },
+    "text": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Matriz 2D [capituloIndex][versiculoIndex]. Ausências e lacunas devem ser null ou declaradas em verseStates.",
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "verseStates": {
+      "type": "array",
+      "description": "Declaração explícita para versículos omitidos, combinados, subdivididos, não convencionais ou com lacunas.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["chapter", "verse", "status", "note"],
+        "properties": {
+          "chapter": { "type": "integer", "minimum": 1 },
+          "verse": { "type": "integer", "minimum": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["omitted", "combined", "split", "non_conventional", "lacuna"]
+          },
+          "combinedWith": { "type": "string" },
+          "sourceRef": { "type": "string" },
+          "masoreticRef": { "type": "string" },
+          "note": { "type": "string", "minLength": 1 },
+          "validated": { "type": "boolean" }
+        }
+      }
+    },
+    "versificationMap": {
+      "type": "array",
+      "description": "Mapeamento explícito de referências (1:1, 1:N, N:1 ou sem correspondência).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceRef", "relation", "validated"],
+        "properties": {
+          "sourceRef": { "type": "string", "minLength": 1 },
+          "targetRef": { "type": ["string", "null"] },
+          "relation": {
+            "type": "string",
+            "enum": ["1:1", "1:N", "N:1", "unmapped"]
+          },
+          "validated": { "type": "boolean" },
+          "note": { "type": "string" }
+        }
+      }
+    }
+  }
+}

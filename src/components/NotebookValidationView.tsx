@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { CheckCircle2, Download, Printer, Trash2, XCircle } from 'lucide-react';
-import type { ManifestPayload, NotebookEntryItem } from '../types';
+import { CheckCircle2, Download, Link2, Printer, Trash2, XCircle } from 'lucide-react';
+import type {
+  ManifestPayload,
+  NotebookConnectionItem,
+  NotebookEntryItem,
+  SearchHistoryRecord,
+  TranslationSummary,
+} from '../types';
 import { AudioPlayButton } from './AudioPlayButton';
 
 interface ValidationSuiteResponse {
@@ -16,21 +22,14 @@ interface ValidationSuiteResponse {
   algorithmVersions: Array<{ algorithm: string; version: string; description: string }>;
 }
 
-interface SearchHistoryItem {
-  id: number;
-  module: string;
-  query_summary: string;
-  parameters_json: string;
-  total_hits: number;
-  algorithm_version: string;
-  created_at: string;
-}
-
 interface NotebookValidationViewProps {
   mode: 'caderno' | 'validacao';
   manifestData: ManifestPayload | null;
+  translations: TranslationSummary[];
+  preferredTranslationId: string;
   notebookEntries: NotebookEntryItem[];
-  searchHistory: SearchHistoryItem[];
+  notebookConnections: NotebookConnectionItem[];
+  searchHistory: SearchHistoryRecord[];
   draftNote: {
     title: string;
     reference: string;
@@ -45,7 +44,10 @@ interface NotebookValidationViewProps {
 export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
   mode,
   manifestData,
+  translations,
+  preferredTranslationId,
   notebookEntries,
+  notebookConnections,
   searchHistory,
   draftNote,
   onClearDraft,
@@ -58,6 +60,12 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
   const [hypothesis, setHypothesis] = useState('');
   const [parametersJson, setParametersJson] = useState('{}');
   const [saving, setSaving] = useState(false);
+
+  // Conexões entre descobertas
+  const [fromEntryId, setFromEntryId] = useState<number | ''>('');
+  const [toEntryId, setToEntryId] = useState<number | ''>('');
+  const [relationNote, setRelationNote] = useState('');
+  const [savingConn, setSavingConn] = useState(false);
 
   const [reportHypotheses, setReportHypotheses] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -79,7 +87,11 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
     setLoadingVal(true);
     try {
       const res = await fetch('/api/validation');
-      setValidation((await res.json()) as ValidationSuiteResponse);
+      if (res.ok) {
+        setValidation((await res.json()) as ValidationSuiteResponse);
+      }
+    } catch {
+      // evita rejeição não tratada
     } finally {
       setLoadingVal(false);
     }
@@ -96,6 +108,14 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
     if (!title.trim() || !hypothesis.trim()) return;
     setSaving(true);
     try {
+      const activeTr = translations.find((t) => t.id === preferredTranslationId);
+      const snapshot = {
+        preferredTranslationId,
+        sigla: activeTr?.sigla ?? 'ACF',
+        name: activeTr?.name ?? 'Almeida Corrigida Fiel',
+        edition: activeTr?.edition ?? '1753/1819',
+        capturedAtUtc: new Date().toISOString(),
+      };
       const res = await fetch('/api/notebook', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,7 +126,8 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
           evidence_tier: evidenceTier,
           hypothesis,
           parameters_json: parametersJson,
-          algorithm_version: 'yawe-2.0.0',
+          translations_snapshot: snapshot,
+          algorithm_version: 'yawe-2.1.0',
         }),
       });
       if (res.ok) {
@@ -118,13 +139,45 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
         onClearDraft();
         onRefreshNotebook();
       }
+    } catch {
+      // evita rejeição não tratada
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteEntry = async (id: number) => {
-    await fetch(`/api/notebook/${id}`, { method: 'DELETE' });
+    await fetch(`/api/notebook/${id}`, { method: 'DELETE' }).catch(() => {});
+    onRefreshNotebook();
+  };
+
+  const handleAddConnection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fromEntryId || !toEntryId || fromEntryId === toEntryId || !relationNote.trim()) return;
+    setSavingConn(true);
+    try {
+      const res = await fetch('/api/notebook/connections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_entry_id: Number(fromEntryId),
+          to_entry_id: Number(toEntryId),
+          relation_note: relationNote.trim(),
+        }),
+      });
+      if (res.ok) {
+        setRelationNote('');
+        onRefreshNotebook();
+      }
+    } catch {
+      // evita rejeição não tratada
+    } finally {
+      setSavingConn(false);
+    }
+  };
+
+  const handleDeleteConnection = async (id: number) => {
+    await fetch(`/api/notebook/connections/${id}`, { method: 'DELETE' }).catch(() => {});
     onRefreshNotebook();
   };
 
@@ -140,6 +193,7 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
           parameters: {
             corpus: manifestData?.manifest.primary_edition,
             booksCount: manifestData?.manifest.canonical_books_count,
+            preferredTranslationId,
           },
           hypotheses: reportHypotheses,
           includeNotebook: true,
@@ -329,87 +383,140 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <form onSubmit={handleSaveEntry} className="lg:col-span-5 qumran-glass gem-border rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-bold text-[#1f1912]">Novo registro no Caderno de Investigação (SQLite)</h2>
+        <div className="lg:col-span-5 space-y-6">
+          <form onSubmit={handleSaveEntry} className="qumran-glass gem-border rounded-xl p-5 space-y-4">
+            <h2 className="text-sm font-bold text-[#1f1912]">Novo registro no Caderno de Investigação (SQLite)</h2>
 
-          <div>
-            <label className="block text-xs text-[#5c4d3c] mb-1">Título do achado / nota</label>
-            <input
-              type="text"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex.: Declaração dupla em Dt 32:39"
-              className="w-full px-3 py-2 text-sm border rounded"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-[#5c4d3c] mb-1">Referência canônica</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Título do achado / nota</label>
               <input
                 type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder="Ex.: Deuteronômio 32:39"
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ex.: Declaração dupla em Dt 32:39"
                 className="w-full px-3 py-2 text-sm border rounded"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-[#5c4d3c] mb-1">Referência canônica</label>
+                <input
+                  type="text"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  placeholder="Ex.: Deuteronômio 32:39"
+                  className="w-full px-3 py-2 text-sm border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#5c4d3c] mb-1">Camada epistemológica</label>
+                <select
+                  value={evidenceTier}
+                  onChange={(e) => setEvidenceTier(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border rounded"
+                >
+                  <option value="evidencia_textual">Evidência textual</option>
+                  <option value="confirmacao_lexical">Confirmação lexical</option>
+                  <option value="correspondencia_estrutural">Correspondência estrutural</option>
+                  <option value="hipotese_fonetica">Hipótese fonética</option>
+                  <option value="hipotese_interpretativa">Hipótese interpretativa</option>
+                </select>
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs text-[#5c4d3c] mb-1">Camada epistemológica</label>
-              <select
-                value={evidenceTier}
-                onChange={(e) => setEvidenceTier(e.target.value)}
+              <label className="block text-xs text-[#5c4d3c] mb-1">Trecho hebraico (opcional)</label>
+              <input
+                type="text"
+                dir="rtl"
+                lang="he"
+                value={hebrewSnippet}
+                onChange={(e) => setHebrewSnippet(e.target.value)}
+                className="w-full px-3 py-2 text-base font-hebrew border rounded"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Anotação / Hipótese do pesquisador</label>
+              <textarea
+                required
+                rows={4}
+                value={hypothesis}
+                onChange={(e) => setHypothesis(e.target.value)}
+                placeholder="Descreva a observação separando claramente o dado textual da interpretação..."
                 className="w-full px-3 py-2 text-sm border rounded"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full px-4 py-2 text-sm font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors cursor-pointer disabled:opacity-50"
+            >
+              {saving ? 'Gravando…' : 'Salvar no Caderno'}
+            </button>
+          </form>
+
+          {/* Conexões explícitas entre descobertas */}
+          <form onSubmit={handleAddConnection} className="qumran-glass gem-border rounded-xl p-5 space-y-3 no-print">
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-[#0e4d64]" />
+              <h3 className="text-sm font-bold text-[#1f1912]">Conexões entre Descobertas</h3>
+            </div>
+            <p className="text-xs text-[#5c4d3c]">
+              Associe anotações distintas preservando a justificativa metodológica da ligação.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <select
+                value={fromEntryId}
+                onChange={(e) => setFromEntryId(e.target.value ? Number(e.target.value) : '')}
+                className="px-2.5 py-2 border rounded"
               >
-                <option value="evidencia_textual">Evidência textual</option>
-                <option value="confirmacao_lexical">Confirmação lexical</option>
-                <option value="correspondencia_estrutural">Correspondência estrutural</option>
-                <option value="hipotese_fonetica">Hipótese fonética</option>
-                <option value="hipotese_interpretativa">Hipótese interpretativa</option>
+                <option value="">Descoberta A…</option>
+                {notebookEntries.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    #{n.id} · {n.title}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={toEntryId}
+                onChange={(e) => setToEntryId(e.target.value ? Number(e.target.value) : '')}
+                className="px-2.5 py-2 border rounded"
+              >
+                <option value="">Descoberta B…</option>
+                {notebookEntries.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    #{n.id} · {n.title}
+                  </option>
+                ))}
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-[#5c4d3c] mb-1">Trecho hebraico (opcional)</label>
             <input
               type="text"
-              dir="rtl"
-              lang="he"
-              value={hebrewSnippet}
-              onChange={(e) => setHebrewSnippet(e.target.value)}
-              className="w-full px-3 py-2 text-base font-hebrew border rounded"
+              value={relationNote}
+              onChange={(e) => setRelationNote(e.target.value)}
+              placeholder="Descreva a relação observada (ex.: paralelismo de expressão pronominal)..."
+              className="w-full px-3 py-2 text-xs border rounded"
             />
-          </div>
-
-          <div>
-            <label className="block text-xs text-[#5c4d3c] mb-1">Anotação / Hipótese do pesquisador</label>
-            <textarea
-              required
-              rows={4}
-              value={hypothesis}
-              onChange={(e) => setHypothesis(e.target.value)}
-              placeholder="Descreva a observação separando claramente o dado textual da interpretação..."
-              className="w-full px-3 py-2 text-sm border rounded"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full px-4 py-2 text-sm font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors cursor-pointer disabled:opacity-50"
-          >
-            {saving ? 'Gravando…' : 'Salvar no Caderno'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={savingConn || !fromEntryId || !toEntryId || fromEntryId === toEntryId || !relationNote.trim()}
+              className="w-full px-3 py-2 text-xs font-semibold text-[#1f1912] qumran-glass-inset hover:bg-[#ebd8b5]/80 rounded disabled:opacity-45 cursor-pointer"
+            >
+              {savingConn ? 'Vinculando…' : 'Registrar conexão entre notas'}
+            </button>
+          </form>
+        </div>
 
         <div className="lg:col-span-7 space-y-6">
           <div className="qumran-glass gem-border rounded-xl p-5 space-y-4 no-print">
             <div>
               <h2 className="text-sm font-bold text-[#1f1912]">Exportação Reprodutível (Compatível com NotebookLM)</h2>
               <p className="text-xs text-[#5c4d3c]">
-                Exporta fontes canônicas, hashes SHA-256, parâmetros, versões de algoritmos e hipóteses separadas.
+                Exporta fontes canônicas, hashes SHA-256, parâmetros, snapshots de tradução, conexões e hipóteses separadas.
               </p>
             </div>
 
@@ -466,42 +573,90 @@ export const NotebookValidationView: React.FC<NotebookValidationViewProps> = ({
                 Nenhuma anotação registrada ainda. Salve ocorrências diretamente de qualquer módulo ou preencha o formulário ao lado.
               </div>
             ) : (
-              notebookEntries.map((n) => (
-                <div key={n.id} className="p-4 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-bold text-[#1f1912]">{n.title}</div>
-                      <div className="text-xs text-[#5c4d3c]">
-                        {n.reference} · {n.evidence_tier} · <span className="font-mono">{n.created_at.slice(0, 19).replace('T', ' ')}</span>
+              notebookEntries.map((n) => {
+                let trSnapSigla: string | null = null;
+                if (n.translations_snapshot_json && n.translations_snapshot_json !== '{}') {
+                  try {
+                    const parsed = JSON.parse(n.translations_snapshot_json) as { sigla?: string };
+                    if (parsed.sigla) trSnapSigla = parsed.sigla;
+                  } catch {
+                    trSnapSigla = null;
+                  }
+                }
+                return (
+                  <div key={n.id} className="p-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="text-sm font-bold text-[#1f1912]">
+                          #{n.id} · {n.title}
+                        </div>
+                        <div className="text-xs text-[#5c4d3c]">
+                          {n.reference} · {n.evidence_tier}
+                          {trSnapSigla ? ` · Tradução: ${trSnapSigla}` : ''} ·{' '}
+                          <span className="font-mono">{n.created_at.slice(0, 19).replace('T', ' ')}</span>
+                        </div>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteEntry(n.id)}
+                        className="text-[#6d5b45] hover:text-rose-700 p-1 cursor-pointer no-print"
+                        aria-label="Excluir anotação"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEntry(n.id)}
-                      className="text-[#6d5b45] hover:text-rose-700 p-1 cursor-pointer no-print"
-                      aria-label="Excluir anotação"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {n.hebrew_snippet && (
+                      <div className="flex items-start justify-between gap-3 qumran-glass-inset px-3 py-2 rounded-lg">
+                        <p className="flex-1 font-hebrew text-lg text-[#1f1912]" dir="rtl" lang="he">
+                          {n.hebrew_snippet}
+                        </p>
+                        <AudioPlayButton
+                          audioId={`note-he-${n.id}`}
+                          text={n.hebrew_snippet}
+                          lang="he-IL"
+                          label="Ouvir"
+                        />
+                      </div>
+                    )}
+                    <p className="text-sm text-[#4a3d2d] whitespace-pre-wrap">{n.hypothesis}</p>
                   </div>
-                  {n.hebrew_snippet && (
-                    <div className="flex items-start justify-between gap-3 qumran-glass-inset px-3 py-2 rounded-lg">
-                      <p className="flex-1 font-hebrew text-lg text-[#1f1912]" dir="rtl" lang="he">
-                        {n.hebrew_snippet}
-                      </p>
-                      <AudioPlayButton
-                        audioId={`note-he-${n.id}`}
-                        text={n.hebrew_snippet}
-                        lang="he-IL"
-                        label="Ouvir"
-                      />
-                    </div>
-                  )}
-                  <p className="text-sm text-[#4a3d2d] whitespace-pre-wrap">{n.hypothesis}</p>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
+
+          {notebookConnections.length > 0 && (
+            <div className="qumran-glass gem-border rounded-xl p-4 space-y-2">
+              <h3 className="text-xs font-bold text-[#1f1912]">
+                Conexões registradas ({notebookConnections.length})
+              </h3>
+              <div className="divide-y qumran-divider text-xs">
+                {notebookConnections.map((c) => {
+                  const fromNote = notebookEntries.find((e) => e.id === c.from_entry_id);
+                  const toNote = notebookEntries.find((e) => e.id === c.to_entry_id);
+                  return (
+                    <div key={c.id} className="py-2 flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-semibold text-[#0b3948]">
+                          #{c.from_entry_id} ({fromNote?.title ?? 'Nota removida'}) ↔ #{c.to_entry_id} (
+                          {toNote?.title ?? 'Nota removida'})
+                        </div>
+                        <div className="text-[#4a3d2d] mt-0.5">{c.relation_note}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteConnection(c.id)}
+                        className="text-[#6d5b45] hover:text-rose-700 p-1 cursor-pointer no-print"
+                        aria-label="Remover conexão"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {searchHistory.length > 0 && (
             <div className="qumran-glass gem-border rounded-xl p-4 space-y-2 no-print">

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { BookmarkPlus, Layers, Repeat } from 'lucide-react';
+import { AlertCircle, BookmarkPlus, Layers, Repeat } from 'lucide-react';
 import type { ManifestBook } from '../types';
+import { fetchJson } from '../utils/api';
 import { AudioPlayButton } from './AudioPlayButton';
 
 interface RepetitionItem {
@@ -47,6 +48,9 @@ interface PhrasesResponse {
   totalDiscovered: number;
   returnedCount: number;
   analyzedLetters: number;
+  totalScopeLetters?: number;
+  coveragePercent?: number;
+  isExhaustive?: boolean;
   analyzedBooks: string[];
   truncatedCorpus: boolean;
   phrases: SuffixPhraseItem[];
@@ -56,6 +60,7 @@ interface PhrasesResponse {
 
 interface RepetitionsPhrasesViewProps {
   books: ManifestBook[];
+  preferredTranslationId?: string;
   onSaveToNotebook: (item: {
     title: string;
     reference: string;
@@ -68,6 +73,7 @@ interface RepetitionsPhrasesViewProps {
 
 export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
   books,
+  preferredTranslationId,
   onSaveToNotebook,
   onInspectChapter,
 }) => {
@@ -82,18 +88,20 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
   const [repData, setRepData] = useState<RepetitionsResponse | null>(null);
 
   // Suffix Array params
-  const [saBookSlug, setSaBookSlug] = useState('genesis');
+  const [saScope, setSaScope] = useState('book:genesis');
   const [minLength, setMinLength] = useState(11);
   const [maxLength, setMaxLength] = useState(32);
   const [minFrequency, setMinFrequency] = useState(5);
   const [saData, setSaData] = useState<PhrasesResponse | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const runRepetitions = async (targetPage = 1) => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/search/repetitions', {
+      const json = await fetchJson<RepetitionsResponse>('/api/search/repetitions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -104,9 +112,12 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
           maxUnitWords,
           page: targetPage,
           pageSize: 50,
+          translationId: preferredTranslationId,
         }),
       });
-      setRepData((await res.json()) as RepetitionsResponse);
+      setRepData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao detectar repetições.');
     } finally {
       setLoading(false);
     }
@@ -114,20 +125,28 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
 
   const runSuffixArray = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/search/phrases', {
+      const isDiv = saScope.startsWith('div:');
+      const targetDivision = isDiv ? saScope.slice(4) : 'all';
+      const targetBook = isDiv ? 'all' : saScope.slice(5);
+
+      const json = await fetchJson<PhrasesResponse>('/api/search/phrases', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          bookSlug: saBookSlug,
-          division: saBookSlug === 'all' ? 'Torah' : 'all',
+          bookSlug: targetBook,
+          division: targetDivision,
           minLength,
           maxLength,
           minFrequency,
           limit: 60,
+          translationId: preferredTranslationId,
         }),
       });
-      setSaData((await res.json()) as PhrasesResponse);
+      setSaData(json);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao executar Suffix Array.');
     } finally {
       setLoading(false);
     }
@@ -164,9 +183,16 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
           <span className="text-xs text-[#5c4d3c]">
             {tab === 'consecutive'
               ? 'Detecta repetições adjacentes sem lista prévia (ex.: קדוש קדוש קדוש, ארץ ארץ ארץ, יהוה יהוה)'
-              : 'Descobre frases recorrentes automaticamente por Suffix Array + Kasai LCP'}
+              : 'Descobre frases recorrentes automaticamente por Suffix Array Radix O(N log N) + Kasai LCP'}
           </span>
         </div>
+
+        {error && (
+          <div role="alert" className="flex items-center gap-2 px-3 py-2 text-xs text-rose-900 bg-rose-100/85 border border-rose-300 rounded-lg">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+        )}
 
         {tab === 'consecutive' ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
@@ -247,18 +273,23 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
             <div className="md:col-span-4">
-              <label className="block text-xs text-[#5c4d3c] mb-1">Livro / Bloco para Suffix Array</label>
+              <label className="block text-xs text-[#5c4d3c] mb-1">Divisão ou Livro para Suffix Array</label>
               <select
-                value={saBookSlug}
-                onChange={(e) => setSaBookSlug(e.target.value)}
+                value={saScope}
+                onChange={(e) => setSaScope(e.target.value)}
                 className="w-full px-3 py-2 text-sm border rounded"
               >
-                <option value="all">Torá completa (até 320.000 letras)</option>
-                {books.map((b) => (
-                  <option key={b.slug} value={b.slug}>
-                    {b.ptTitle} ({b.letters.toLocaleString('pt-BR')} letras)
-                  </option>
-                ))}
+                <option value="div:all">Todo o Tanakh (39 livros · exaustivo 1.196.840 letras)</option>
+                <option value="div:Torah">Torá completa (5 livros)</option>
+                <option value="div:Prophets">Nevi’im / Profetas completos (21 livros)</option>
+                <option value="div:Writings">Ketuvim / Escritos completos (13 livros)</option>
+                <optgroup label="Livros individuais">
+                  {books.map((b) => (
+                    <option key={b.slug} value={`book:${b.slug}`}>
+                      {b.ptTitle} ({b.letters.toLocaleString('pt-BR')} letras)
+                    </option>
+                  ))}
+                </optgroup>
               </select>
             </div>
             <div className="md:col-span-2">
@@ -424,11 +455,20 @@ export const RepetitionsPhrasesView: React.FC<RepetitionsPhrasesViewProps> = ({
       {tab === 'suffix_array' && saData && (
         <div className="space-y-4">
           <div className="qumran-glass gem-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-2 text-xs text-[#4a3d2d]">
-            <div>
-              <strong className="font-mono tabular-nums text-base text-[#0b3948] mr-1.5">{saData.totalDiscovered}</strong>
-              padrões recorrentes descobertos em{' '}
-              <strong className="font-mono tabular-nums text-[#1f1912]">{saData.analyzedLetters.toLocaleString('pt-BR')}</strong> letras
-              <span className="ml-2 font-mono text-[#6d5b45]">({saData.algorithmVersion})</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <strong className="font-mono tabular-nums text-base text-[#0b3948]">{saData.totalDiscovered}</strong>
+              <span>padrões recorrentes descobertos em</span>
+              <strong className="font-mono tabular-nums text-[#1f1912]">
+                {saData.analyzedLetters.toLocaleString('pt-BR')}
+              </strong>
+              <span>
+                de {(saData.totalScopeLetters ?? saData.analyzedLetters).toLocaleString('pt-BR')} letras (
+                <strong className={saData.isExhaustive !== false ? 'text-[#047857]' : 'text-[#9a5410]'}>
+                  {saData.coveragePercent ?? 100}% · {saData.isExhaustive !== false ? 'Varredura exaustiva' : 'Parcial'}
+                </strong>
+                )
+              </span>
+              <span className="font-mono text-[#6d5b45]">({saData.algorithmVersion})</span>
             </div>
             <div>{saData.computationalLimits}</div>
           </div>

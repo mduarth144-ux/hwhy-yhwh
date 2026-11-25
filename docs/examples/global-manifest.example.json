@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedAtUtc": "2026-11-24T16:00:00Z",
+  "defaultTranslationId": "acf",
+  "autoDiscovery": true,
+  "translations": [
+    {
+      "id": "acf",
+      "name": "Almeida Corrigida Fiel (ACF)",
+      "sigla": "ACF",
+      "language": "pt-BR",
+      "canon": "tanakh",
+      "manifestPath": "acf/manifest.json",
+      "restrictedDistribution": false,
+      "validationStatus": "validated"
+    }
+  ]
+}

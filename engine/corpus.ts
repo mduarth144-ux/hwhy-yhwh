@@ -2,9 +2,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { isAramaicVerse, normalizeFinalLetters } from './normalize.ts';
+import type { TranslationRegistry } from './translations.ts';
 import type {
   BookData,
   Division,
+  InvolvedVerseDetail,
   LexiconStats,
   MatchBoundaryType,
   OccurrenceResult,
@@ -79,8 +81,10 @@ export class TanakhCorpus {
   public readonly verseHashes = new Map<string, VerseHashEntry[]>();
   public readonly globalStream: string;
   public readonly globalBookOffsets: Array<{ slug: string; title: string; start: number; end: number }> = [];
+  private translationRegistry: TranslationRegistry | null = null;
 
-  constructor(dataDir: string) {
+  constructor(dataDir: string, translations?: TranslationRegistry) {
+    this.translationRegistry = translations ?? null;
     const manifestPath = path.join(dataDir, 'manifest.json');
     if (!fs.existsSync(manifestPath)) {
       throw new Error(`Manifesto nao encontrado em ${manifestPath}. Execute scripts/import_tanakh.py e scripts/build_corpus.py.`);
@@ -177,7 +181,7 @@ export class TanakhCorpus {
         }
       }
 
-      // Indexar hashes SHA-256 dos versiculos no stream
+      // Indexar hashes SHA-256 dos versiculos no stream (hebraico puro; traducao resolvida dinamicamente)
       for (const vr of bookData.verses) {
         if (vr.s === vr.e) continue; // lacuna autorizada
         const vStream = bookData.stream.slice(vr.s, vr.e);
@@ -191,13 +195,46 @@ export class TanakhCorpus {
           verse: vr.v,
           verseStream: vStream,
           verseVocalized: vr.voc,
-          translationPt: vr.pt,
+          translationPt: vr.pt ?? '',
         });
         this.verseHashes.set(hash, arr);
       }
     }
 
     this.globalStream = globalParts.join('');
+  }
+
+  public setTranslationRegistry(registry: TranslationRegistry): void {
+    this.translationRegistry = registry;
+  }
+
+  public resolveVerseTranslation(
+    slug: string,
+    chapter: number,
+    verse: number,
+    translationId?: string | null,
+  ): { text: string; source: string | null; translationId: string | undefined; state: string | null; note: string | null } {
+    if (this.translationRegistry) {
+      const resolved = this.translationRegistry.getVerse(translationId, slug, chapter, verse);
+      if (resolved) {
+        return {
+          text: resolved.text ?? '',
+          source: resolved.translationName,
+          translationId: resolved.translationId,
+          state: resolved.state?.status ?? null,
+          note: resolved.state?.note ?? resolved.unmappedWarning,
+        };
+      }
+    }
+    const bk = this.bookBySlug.get(slug);
+    const vr = bk?.verses.find((v) => v.c === chapter && v.v === verse);
+    return {
+      text: vr?.pt ?? '',
+      source: vr?.pt ? (bk?.ptVersionTitle ?? 'ACF') : null,
+      translationId: translationId ?? undefined,
+      state: null,
+      note: null,
+    };
   }
 
   public getBooksByScope(scope?: { division?: string; bookSlug?: string }): BookData[] {
@@ -218,7 +255,6 @@ export class TanakhCorpus {
       const mid = (lo + hi) >> 1;
       const vr = book.verses[mid];
       if (vr.s === vr.e) {
-        // skip zero-length lacunae cleanly
         if (offset < vr.s) hi = mid - 1;
         else lo = mid + 1;
         continue;
@@ -312,6 +348,8 @@ export class TanakhCorpus {
       cost?: number;
       distance?: number;
       elsSkip?: number;
+      translationId?: string | null;
+      matchType?: 'exact_consonantal' | 'phonetic_approximation';
     },
   ): OccurrenceResult {
     const startVIdx = this.findVerseIndexByOffset(book, start);
@@ -320,9 +358,29 @@ export class TanakhCorpus {
     const vEnd = book.verses[endVIdx];
     const cls = this.classifyBoundary(book, start, end);
 
-    const kq = book.masoreticDiffs
-      .filter((d) => d.chapter === vStart.c && d.verse === vStart.v)
-      .flatMap((d) => d.items);
+    // Coletar TODOS os versiculos envolvidos mantendo o mesmo capitulo/versiculo em contexto completo
+    const involvedVerses: InvolvedVerseDetail[] = [];
+    const masoreticItems: OccurrenceResult['ketivQereInVerse'] = [];
+    for (let idx = startVIdx; idx <= endVIdx && idx < book.verses.length; idx++) {
+      const vr = book.verses[idx];
+      if (vr.s === vr.e && idx > startVIdx) continue;
+      const tr = this.resolveVerseTranslation(book.slug, vr.c, vr.v, options.translationId);
+      involvedVerses.push({
+        chapter: vr.c,
+        verse: vr.v,
+        reference: `${book.ptTitle} ${vr.c}:${vr.v}`,
+        vocalized: vr.voc,
+        consonantal: vr.cons,
+        stream: book.stream.slice(vr.s, vr.e),
+        translationPt: tr.text,
+        translationState: tr.state,
+        translationNote: tr.note,
+      });
+      const kqItems = book.masoreticDiffs
+        .filter((d) => d.chapter === vr.c && d.verse === vr.v)
+        .flatMap((d) => d.items);
+      masoreticItems.push(...kqItems);
+    }
 
     const isCrossVerse = vStart.c !== vEnd.c || vStart.v !== vEnd.v;
     const refLabel = isCrossVerse
@@ -332,6 +390,19 @@ export class TanakhCorpus {
     const beforeVerse = startVIdx > 0 ? book.verses[startVIdx - 1] : null;
     const afterVerse = endVIdx + 1 < book.verses.length ? book.verses[endVIdx + 1] : null;
     const aramaic = isAramaicVerse(book.title, vStart.c, vStart.v);
+
+    const startTr = this.resolveVerseTranslation(book.slug, vStart.c, vStart.v, options.translationId);
+    const beforeTr = beforeVerse
+      ? this.resolveVerseTranslation(book.slug, beforeVerse.c, beforeVerse.v, options.translationId)
+      : null;
+    const afterTr = afterVerse
+      ? this.resolveVerseTranslation(book.slug, afterVerse.c, afterVerse.v, options.translationId)
+      : null;
+
+    const combinedTranslation = involvedVerses
+      .map((iv) => (involvedVerses.length > 1 ? `[${iv.chapter}:${iv.verse}] ${iv.translationPt}` : iv.translationPt))
+      .filter(Boolean)
+      .join(' ');
 
     return {
       id: `${book.slug}:${start}-${end}:${options.elsSkip ?? 0}`,
@@ -354,21 +425,28 @@ export class TanakhCorpus {
       crossesVerse: cls.crossesVerse,
       isAramaicRange: aramaic,
       evidenceTier: options.evidenceTier,
-      verseVocalized: isCrossVerse ? `${vStart.voc} ‖ ${vEnd.voc}` : vStart.voc,
-      verseConsonantal: isCrossVerse ? `${vStart.cons} ‖ ${vEnd.cons}` : vStart.cons,
+      verseVocalized: involvedVerses.map((iv) => iv.vocalized).join(' ‖ '),
+      verseConsonantal: involvedVerses.map((iv) => iv.consonantal).join(' ‖ '),
       verseStream: book.stream.slice(vStart.s, vEnd.e),
       contextBefore: beforeVerse ? `${beforeVerse.c}:${beforeVerse.v} ${beforeVerse.voc}` : '',
+      contextBeforeRef: beforeVerse ? `${book.ptTitle} ${beforeVerse.c}:${beforeVerse.v}` : undefined,
+      contextBeforePt: beforeTr?.text || undefined,
       contextAfter: afterVerse ? `${afterVerse.c}:${afterVerse.v} ${afterVerse.voc}` : '',
-      translationPt: vStart.pt || '',
-      translationPtSource: vStart.pt ? book.ptVersionTitle : null,
+      contextAfterRef: afterVerse ? `${book.ptTitle} ${afterVerse.c}:${afterVerse.v}` : undefined,
+      contextAfterPt: afterTr?.text || undefined,
+      involvedVerses,
+      translationPt: combinedTranslation,
+      translationPtSource: startTr.source,
+      translationId: startTr.translationId,
       edition: book.edition,
       language: aramaic ? 'Aramaico Bíblico' : 'Hebraico Bíblico',
       parametersSummary: options.parametersSummary,
-      ketivQereInVerse: kq,
+      ketivQereInVerse: masoreticItems,
       transformationLog: options.transformationLog,
       cost: options.cost,
       distance: options.distance,
       elsSkip: options.elsSkip,
+      matchType: options.matchType ?? 'exact_consonantal',
     };
   }
 }

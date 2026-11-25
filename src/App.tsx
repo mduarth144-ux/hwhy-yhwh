@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   AudioWaveform,
+  BookMarked,
   BookOpen,
   CheckSquare,
   Compass,
@@ -13,7 +14,8 @@ import {
   Shuffle,
   X,
 } from 'lucide-react';
-import { CompareParallelsView } from './components/CompareParallelsView';
+import { AudioSettingsControl } from './components/AudioSettingsControl';
+import { CompareParallelsView, type TranslationComparePreset } from './components/CompareParallelsView';
 import { ContinuousSearchView } from './components/ContinuousSearchView';
 import { DashboardView } from './components/DashboardView';
 import { ExplorerView } from './components/ExplorerView';
@@ -21,14 +23,33 @@ import { InversionsPhoneticView } from './components/InversionsPhoneticView';
 import { LabsIdentityGraphView } from './components/LabsIdentityGraphView';
 import { NotebookValidationView } from './components/NotebookValidationView';
 import { RepetitionsPhrasesView } from './components/RepetitionsPhrasesView';
+import { TranslationLibraryView } from './components/TranslationLibraryView';
+import { fetchJson } from './utils/api';
 import type {
+  CatalogBookItem,
   ChapterComparePreset,
   DashboardPayload,
   ManifestPayload,
   ModuleId,
+  NotebookConnectionItem,
   NotebookEntryItem,
+  SearchHistoryRecord,
   SearchPresetPayload,
+  TranslationSummary,
 } from './types';
+
+interface TranslationsApiPayload {
+  defaultTranslationId: string | null;
+  preferredTranslationId: string | null;
+  comparisonTranslationIds: string[];
+  translations: TranslationSummary[];
+  catalogBooks: CatalogBookItem[];
+  refreshInfo?: {
+    discovered: number;
+    valid: number;
+    warnings: string[];
+  };
+}
 
 const MODULE_ITEMS: Array<{
   id: ModuleId;
@@ -37,14 +58,15 @@ const MODULE_ITEMS: Array<{
   icon: React.ComponentType<{ className?: string }>;
 }> = [
   { id: 'dashboard', label: 'Dashboard & Descobertas', subtitle: 'Estatísticas e achados do Tanakh', icon: Compass },
-  { id: 'explorador', label: 'Explorador', subtitle: '4 camadas e contexto integral', icon: BookOpen },
+  { id: 'explorador', label: 'Explorador', subtitle: '4 camadas e leitor multicânon', icon: BookOpen },
+  { id: 'biblioteca', label: 'Biblioteca de Traduções', subtitle: 'Registro local e catálogo multicânon', icon: BookMarked },
   { id: 'busca_continua', label: 'Busca Contínua & ELS', subtitle: 'Stream, ressegmentação, Aho-Corasick', icon: Search },
   { id: 'repeticoes', label: 'Repetições & Frases', subtitle: 'Adjacentes e Suffix Array (LCP)', icon: Repeat },
-  { id: 'comparacao', label: 'Comparação & Paralelos', subtitle: 'SHA-256 e diff letra a letra', icon: GitCompare },
+  { id: 'comparacao', label: 'Comparação & Paralelos', subtitle: 'SHA-256, diff e multitradução', icon: GitCompare },
   { id: 'inversoes', label: 'Inversões & Permutações', subtitle: 'Ordem lógica e léxico Tanakh', icon: Shuffle },
-  { id: 'fonetica', label: 'Fonética Experimental', subtitle: 'Regras e custo explícito', icon: AudioWaveform },
-  { id: 'laboratorios', label: 'Identidade & Laboratórios', subtitle: '5 eixos, cruzamentos e grafo', icon: FlaskConical },
-  { id: 'caderno', label: 'Caderno & Relatórios', subtitle: 'SQLite e exportação NotebookLM', icon: NotebookPen },
+  { id: 'fonetica', label: 'Fonética Experimental', subtitle: 'Regras e busca contínua', icon: AudioWaveform },
+  { id: 'laboratorios', label: 'Identidade & Laboratórios', subtitle: '5 eixos, Massorá e grafo', icon: FlaskConical },
+  { id: 'caderno', label: 'Caderno & Relatórios', subtitle: 'SQLite, conexões e NotebookLM', icon: NotebookPen },
   { id: 'validacao', label: 'Validação & Manifesto', subtitle: 'Seções 13–14 e SHA-256', icon: CheckSquare },
 ];
 
@@ -54,23 +76,26 @@ export default function App() {
   const [manifestData, setManifestData] = useState<ManifestPayload | null>(null);
   const [dashboardData, setDashboardData] = useState<DashboardPayload | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(true);
+
+  const [translations, setTranslations] = useState<TranslationSummary[]>([]);
+  const [catalogBooks, setCatalogBooks] = useState<CatalogBookItem[]>([]);
+  const [preferredTranslationId, setPreferredTranslationId] = useState<string>('acf');
+  const [comparisonTranslationIds, setComparisonTranslationIds] = useState<string[]>(['acf']);
+  const [refreshingTranslations, setRefreshingTranslations] = useState(false);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
+
   const [explorerTarget, setExplorerTarget] = useState<{ slug: string; chapter: number }>({
     slug: 'genesis',
     chapter: 1,
   });
   const [searchPreset, setSearchPreset] = useState<SearchPresetPayload | null>(null);
   const [comparePreset, setComparePreset] = useState<ChapterComparePreset | null>(null);
+  const [translationComparePreset, setTranslationComparePreset] =
+    useState<TranslationComparePreset | null>(null);
 
   const [notebookEntries, setNotebookEntries] = useState<NotebookEntryItem[]>([]);
-  const [searchHistory, setSearchHistory] = useState<Array<{
-    id: number;
-    module: string;
-    query_summary: string;
-    parameters_json: string;
-    total_hits: number;
-    algorithm_version: string;
-    created_at: string;
-  }>>([]);
+  const [notebookConnections, setNotebookConnections] = useState<NotebookConnectionItem[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryRecord[]>([]);
   const [draftNote, setDraftNote] = useState<{
     title: string;
     reference: string;
@@ -84,9 +109,33 @@ export default function App() {
       .then((r) => r.json())
       .then((json) => {
         setNotebookEntries(json.entries ?? []);
+        setNotebookConnections(json.connections ?? []);
         setSearchHistory(json.history ?? []);
       })
       .catch(() => {});
+  };
+
+  const loadDashboard = (trId?: string) => {
+    setDashboardLoading(true);
+    const q = trId ? `?translationId=${encodeURIComponent(trId)}` : '';
+    fetch(`/api/dashboard${q}`)
+      .then((r) => r.json())
+      .then((json: DashboardPayload) => setDashboardData(json))
+      .catch(() => {})
+      .finally(() => setDashboardLoading(false));
+  };
+
+  const applyTranslationsPayload = (json: TranslationsApiPayload) => {
+    setTranslations(json.translations ?? []);
+    setCatalogBooks(json.catalogBooks ?? []);
+    if (json.preferredTranslationId) {
+      setPreferredTranslationId(json.preferredTranslationId);
+    } else if (json.defaultTranslationId) {
+      setPreferredTranslationId(json.defaultTranslationId);
+    }
+    if (Array.isArray(json.comparisonTranslationIds) && json.comparisonTranslationIds.length > 0) {
+      setComparisonTranslationIds(json.comparisonTranslationIds);
+    }
   };
 
   useEffect(() => {
@@ -95,14 +144,68 @@ export default function App() {
       .then((json: ManifestPayload) => setManifestData(json))
       .catch(() => {});
 
-    fetch('/api/dashboard')
+    fetch('/api/translations')
       .then((r) => r.json())
-      .then((json: DashboardPayload) => setDashboardData(json))
-      .catch(() => {})
-      .finally(() => setDashboardLoading(false));
+      .then((json: TranslationsApiPayload) => {
+        applyTranslationsPayload(json);
+        loadDashboard(json.preferredTranslationId ?? json.defaultTranslationId ?? 'acf');
+      })
+      .catch(() => {
+        loadDashboard('acf');
+      });
 
     loadNotebook();
   }, []);
+
+  const handleSetPreferredTranslation = async (id: string) => {
+    setPreferredTranslationId(id);
+    try {
+      await fetchJson('/api/preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferredTranslationId: id }),
+      }, { retries: 0 });
+    } catch {
+      // mantém seleção local caso a rede oscile
+    } finally {
+      loadDashboard(id);
+    }
+  };
+
+  const handleToggleComparisonTranslation = async (id: string) => {
+    const next = comparisonTranslationIds.includes(id)
+      ? comparisonTranslationIds.length > 1
+        ? comparisonTranslationIds.filter((x) => x !== id)
+        : comparisonTranslationIds
+      : [...comparisonTranslationIds, id];
+    setComparisonTranslationIds(next);
+    await fetchJson('/api/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comparisonTranslationIds: next }),
+    }, { retries: 0 }).catch(() => {});
+  };
+
+  const handleRefreshTranslationsCatalog = async () => {
+    setRefreshingTranslations(true);
+    setRefreshMessage(null);
+    try {
+      const json = await fetchJson<TranslationsApiPayload>('/api/translations/refresh', {
+        method: 'POST',
+      });
+      applyTranslationsPayload(json);
+      if (json.refreshInfo) {
+        setRefreshMessage(
+          `Catálogo atualizado: ${json.refreshInfo.valid} tradução(ões) válida(s) de ${json.refreshInfo.discovered} diretório(s).`,
+        );
+      }
+      loadDashboard(json.preferredTranslationId ?? preferredTranslationId);
+    } catch (err) {
+      setRefreshMessage(err instanceof Error ? err.message : 'Falha ao atualizar o catálogo de traduções.');
+    } finally {
+      setRefreshingTranslations(false);
+    }
+  };
 
   // Fecha o drawer automaticamente ao girar para landscape ou ampliar para desktop, ou ao pressionar Escape
   useEffect(() => {
@@ -148,6 +251,12 @@ export default function App() {
     setMobileMenuOpen(false);
   };
 
+  const handleCompareBookTranslations = (bookId: string, chapter: number) => {
+    setTranslationComparePreset({ bookId, chapter, verse: 1, nonce: Date.now() });
+    setActiveModule('comparacao');
+    setMobileMenuOpen(false);
+  };
+
   const handleSaveToNotebook = (item: {
     title: string;
     reference: string;
@@ -163,6 +272,7 @@ export default function App() {
   const books = manifestData?.manifest.books ?? [];
   const totals = manifestData?.manifest.totals;
   const activeMeta = MODULE_ITEMS.find((m) => m.id === activeModule)!;
+  const activeTranslationSummary = translations.find((t) => t.id === preferredTranslationId);
 
   const renderSidebarContent = (compactLandscape: boolean) => (
     <div className="flex flex-col h-full justify-between p-3 lg:p-4 gap-5 text-[#f7efe1]">
@@ -248,7 +358,7 @@ export default function App() {
             </div>
           </div>
           <div className="pt-2 text-[11px] text-[#b7c8cd] leading-relaxed">
-            Edição: {manifestData.manifest.primary_edition} · Curadoria: {manifestData.manifest.curadoria}
+            Tradução ativa: <strong className="text-[#fef3c7]">{activeTranslationSummary?.sigla ?? 'ACF'}</strong> · Traduções: {translations.length}
           </div>
         </div>
       )}
@@ -299,7 +409,7 @@ export default function App() {
       {/* Coluna principal (~80% em desktop/landscape, 100% em portrait mobile) */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Cabeçalho compacto contextual */}
-        <header className="qumran-header-glass px-4 lg:px-8 h-13 flex items-center justify-between gap-4 sticky top-0 min-[540px]:max-lg:landscape:static lg:sticky z-30">
+        <header className="qumran-header-glass px-4 lg:px-8 h-13 flex items-center justify-between gap-3 sticky top-0 min-[540px]:max-lg:landscape:static lg:sticky z-30">
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
@@ -331,10 +441,27 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {translations.length > 0 && (
+              <select
+                aria-label="Tradução preferencial global"
+                value={preferredTranslationId}
+                onChange={(e) => handleSetPreferredTranslation(e.target.value)}
+                className="hidden sm:block px-2.5 py-1.5 text-xs font-medium border rounded max-w-[175px] truncate"
+              >
+                {translations.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.sigla} · {t.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            <AudioSettingsControl activeTranslationLang={activeTranslationSummary?.language ?? 'pt-BR'} />
+
             <button
               type="button"
               onClick={() => handleSelectModule('caderno')}
-              className="px-3.5 py-2 text-xs font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 text-xs font-semibold text-[#fefaf0] bg-[#0e4d64] hover:bg-[#0b3948] border border-[#d99f45]/45 rounded-md transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-xs"
             >
               Exportar Relatório
             </button>
@@ -351,7 +478,7 @@ export default function App() {
               <p className="text-sm text-[#4a3d2d] mt-0.5">{activeMeta.subtitle}</p>
             </div>
             <div className="text-xs text-[#5c4d3c]">
-              Motor determinístico local · Fluxo consonantal contínuo UTF-8
+              Motor determinístico local · Fluxo consonantal contínuo UTF-8 · Tradução ativa: {activeTranslationSummary?.sigla ?? 'ACF'}
             </div>
           </div>
 
@@ -359,6 +486,7 @@ export default function App() {
             <DashboardView
               data={dashboardData}
               loading={dashboardLoading}
+              onRefreshDashboard={() => loadDashboard(preferredTranslationId)}
               onNavigateSearch={handleNavigateSearch}
               onCompareChapters={handleCompareChapters}
               onInspectChapter={handleInspectChapter}
@@ -369,15 +497,35 @@ export default function App() {
           {activeModule === 'explorador' && (
             <ExplorerView
               books={books}
+              catalogBooks={catalogBooks}
+              translations={translations}
+              preferredTranslationId={preferredTranslationId}
               initialSlug={explorerTarget.slug}
               initialChapter={explorerTarget.chapter}
               onSaveToNotebook={handleSaveToNotebook}
             />
           )}
 
+          {activeModule === 'biblioteca' && (
+            <TranslationLibraryView
+              translations={translations}
+              catalogBooks={catalogBooks}
+              preferredTranslationId={preferredTranslationId}
+              comparisonTranslationIds={comparisonTranslationIds}
+              refreshing={refreshingTranslations}
+              refreshMessage={refreshMessage}
+              onSetPreferredTranslation={handleSetPreferredTranslation}
+              onToggleComparisonTranslation={handleToggleComparisonTranslation}
+              onRefreshCatalog={handleRefreshTranslationsCatalog}
+              onInspectChapter={handleInspectChapter}
+              onCompareBookTranslations={handleCompareBookTranslations}
+            />
+          )}
+
           {activeModule === 'busca_continua' && (
             <ContinuousSearchView
               books={books}
+              preferredTranslationId={preferredTranslationId}
               initialPreset={searchPreset}
               onSaveToNotebook={handleSaveToNotebook}
               onInspectChapter={handleInspectChapter}
@@ -387,6 +535,7 @@ export default function App() {
           {activeModule === 'repeticoes' && (
             <RepetitionsPhrasesView
               books={books}
+              preferredTranslationId={preferredTranslationId}
               onSaveToNotebook={handleSaveToNotebook}
               onInspectChapter={handleInspectChapter}
             />
@@ -395,7 +544,11 @@ export default function App() {
           {activeModule === 'comparacao' && (
             <CompareParallelsView
               books={books}
+              catalogBooks={catalogBooks}
+              translations={translations}
+              defaultComparisonIds={comparisonTranslationIds}
               initialPreset={comparePreset}
+              initialTranslationComparePreset={translationComparePreset}
               onInspectChapter={handleInspectChapter}
             />
           )}
@@ -403,6 +556,8 @@ export default function App() {
           {activeModule === 'inversoes' && (
             <InversionsPhoneticView
               mode="inversions"
+              books={books}
+              preferredTranslationId={preferredTranslationId}
               onSaveToNotebook={handleSaveToNotebook}
               onInspectChapter={handleInspectChapter}
             />
@@ -411,6 +566,8 @@ export default function App() {
           {activeModule === 'fonetica' && (
             <InversionsPhoneticView
               mode="phonetic"
+              books={books}
+              preferredTranslationId={preferredTranslationId}
               onSaveToNotebook={handleSaveToNotebook}
               onInspectChapter={handleInspectChapter}
             />
@@ -419,6 +576,7 @@ export default function App() {
           {activeModule === 'laboratorios' && (
             <LabsIdentityGraphView
               books={books}
+              preferredTranslationId={preferredTranslationId}
               onSaveToNotebook={handleSaveToNotebook}
               onInspectChapter={handleInspectChapter}
             />
@@ -428,7 +586,10 @@ export default function App() {
             <NotebookValidationView
               mode={activeModule}
               manifestData={manifestData}
+              translations={translations}
+              preferredTranslationId={preferredTranslationId}
               notebookEntries={notebookEntries}
+              notebookConnections={notebookConnections}
               searchHistory={searchHistory}
               draftNote={draftNote}
               onClearDraft={() => setDraftNote(null)}
